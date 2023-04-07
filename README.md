@@ -4,6 +4,9 @@ Use AND, OR, and NOT logic gates to create logic circuits. These gates are funda
 building blocks of digital circuits, and they are used to perform logical operations 
 on binary inputs (inputs that can take on the value of either 0 or 1).
 
+<img src="/img/nor.png" alt="NOR" width="750px" />
+<img src="/img/srlatch.png" alt="SR-Latch" width="750px" />
+
 An AND gate takes two inputs and produces an output that is 1 if and only if both 
 inputs are 1. In other words, the output is 1 if and only if both inputs are true.
 
