@@ -37,8 +37,17 @@ from scratch every time.
 
 ## Usage
 
+Run `/hooks/assemble.sh` to assemble all classes into the `fun.js` file. This way you only need one `<script>` tag. Alternatively, you can just include all the required classes in the specified `load-order` like in `index.html`.
+
+```bash
+$ ./hooks/assemble.sh
+```
+
+Then include `fun.js` and `fun.css` in your HTML file and instantiate a new `FunWithLogicGates` object providing the ID of a `<canvas>` DOM element and a logger level.
+
 ```html
 <script src="fun.js"></script>
+<link rel="stylesheet" href="fun.css" />
 <!-- ... -->
 <canvas id="canvas" width="1000" height="600"></canvas>
 <script type="application/javascript">
