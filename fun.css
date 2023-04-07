@@ -1,0 +1,316 @@
+:root {
+    --button-text-color: #FFFFFF;
+    --button-color: #0099FF;
+    --context-menu-background: #111111;
+    --context-menu-text-color: #EEEEEE;
+    --border-color: #000000;
+    --info-color: #9bec9b;
+    --error-color: #eea5be;
+}
+
+.fun-with-logic-gates--canvas {
+    border:1px solid black;
+    /*max-width:100%;*/
+    cursor: grab;
+}
+
+#context-menu {
+    position: fixed;
+    padding: 5px;
+    background-color: var(--context-menu-background);
+    border-radius: 5px;
+}
+
+#context-menu li {
+    list-style: none;
+}
+
+#context-menu li button {
+    padding: 10px;
+    color: var(--context-menu-text-color);
+    background-color: var(--context-menu-background);
+    font-family: sans-serif;
+    border: none ;
+    border-bottom: 1px solid var(--context-menu-text-color);
+    cursor: pointer;
+    width: 100px;
+    text-align: center;
+}
+
+#context-menu li button:hover {
+    color: var(--context-menu-background);
+    background-color: var(--context-menu-text-color);
+}
+
+#canvas-mask--div {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: black;
+    opacity: 0.65;
+    z-index: 1000;
+}
+
+#save-component--div,
+#io-rename--div {
+    display: flex;
+    align-items: center;
+    position: fixed;
+    top: 30vh;
+    bottom: 30vh;
+    left: 30vw;
+    right: 30vw;
+    border: 1px solid black;
+    background: white;
+    padding: 15px;
+    z-index: 1001;
+}
+
+#save-component--div .save-component-close--span,
+#io-rename--div .io-rename-close--span {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    cursor: pointer;
+}
+
+#save-component--div div,
+#io-rename--div div {
+    display: block;
+    margin: auto;
+}
+
+#fun-with-logic-gates--nav {
+    max-width:100%;
+    border: 1px solid var(--border-color);
+    padding: 5px 5px 0;
+    margin: 0 5px;
+}
+
+#save-component--div #save-component--button,
+#io-rename--div #io-rename--button,
+.toast-message--span button,
+#truth-table-close--button,
+#save-component--div #save-component--input,
+#io-rename--div #io-rename--input,
+#fun-with-logic-gates--nav input[type="text"],
+#fun-with-logic-gates--nav button {
+    padding: 10px;
+    border: 1px solid var(--button-color) ;
+    background-color: var(--button-color) ;
+    color: var(--button-text-color);
+    cursor: pointer ;
+    margin: 0 5px 5px 0;
+}
+
+#save-component--div #save-component--input::placeholder,
+#io-rename--div #io-rename--input::placeholder,
+#fun-with-logic-gates--nav input[type="text"]::placeholder {
+    color: var(--button-text-color) ;
+}
+
+#save-component--div #save-component--input,
+#io-rename--div #io-rename--input,
+#fun-with-logic-gates--nav input[type="text"] {
+    width:80px;
+    cursor: text;
+}
+
+#save-component--div #save-component--input {
+    width: 200px;
+}
+
+#fun-with-logic-gates--nav input[type="color"] {
+    margin: -25px 5px 0 0;
+    cursor: pointer ;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: transparent;
+    width: 40px;
+    height: 40px;
+    border: none;
+    translate: 0 10px;
+}
+
+#fun-with-logic-gates--nav input[type="color"]::-webkit-color-swatch {
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+}
+
+#fun-with-logic-gates--nav input[type="color"]::-moz-color-swatch {
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+}
+
+#io-rename--div #io-rename--button:hover,
+.toast-message--span button:hover,
+#truth-table-close--button:hover,
+#io-rename--div #io-rename--input:hover,
+#fun-with-logic-gates--nav input[type="text"]:hover,
+#fun-with-logic-gates--nav button:hover {
+    background-color: var(--button-text-color) ;
+    color: var(--button-color);
+}
+
+#truth-table--div {
+    position: fixed;
+    top: 25%;
+    bottom: 25%;
+    left: 25%;
+    right: 25%;
+    background-color: white;
+    border: 1px solid black;
+    padding: 10px;
+    text-align: center;
+    z-index: 1001;
+}
+
+#truth-table--div .truth-table-scroll--div {
+    height: 84%;
+    overflow: auto;
+    border-bottom: 1px solid black;
+}
+
+#truth-table--div table {
+    border-collapse: collapse;
+    margin: 5px auto;
+}
+
+#truth-table--div .truth-table-in--th,
+#truth-table--div .truth-table-out--th,
+#truth-table--div .truth-table-in--td,
+#truth-table--div .truth-table-out--td {
+    border: 1px solid black;
+    padding: 5px ;
+}
+
+#truth-table--div .truth-table-in--th,
+#truth-table--div .truth-table-in--td {
+    background-color: white;
+}
+
+#truth-table--div .truth-table-out--th,
+#truth-table--div .truth-table-out--td {
+    background-color: lightgray;
+}
+
+#truth-table--div #truth-table-close--button {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+}
+
+/* ToastMessage */
+@-moz-keyframes fadein {
+    0%   { opacity: 0; }
+    25%  { opacity: 0.75; }
+    100% { opacity: 1; }
+}
+
+@-webkit-keyframes fadein {
+    0%   { opacity: 0; }
+    25%  { opacity: 0.75; }
+    100% { opacity: 1; }
+}
+
+@-ms-keyframes fadein {
+    0%   { opacity: 0; }
+    25%  { opacity: 0.75; }
+    100% { opacity: 1; }
+}
+
+@keyframes fadein {
+    0%   { opacity: 0; }
+    25%  { opacity: 0.75; }
+    100% { opacity: 1; }
+}
+
+@-moz-keyframes fadeout {
+    0%   { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+@-webkit-keyframes fadeout {
+    0%   { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+@-ms-keyframes fadeout {
+    0%   { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+@keyframes fadeout {
+    0%   { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.toast-message--span {
+    font-size: 18px;
+    position: fixed;
+    top: 25px;
+    background-color: var(--info-color);
+    border-radius: 10px;
+    left: 25vw;
+    right: 25vw;
+    display: flex;
+    align-items: center;
+    padding: 10px 60px 10px 0;
+    z-index: 9999999999999999999999999;
+    -webkit-animation: fadein 400ms;
+    -moz-animation: fadein 400ms;
+    -o-animation: fadein 400ms;
+    animation: fadein 400ms;
+}
+
+.toast-message--span.toast-confirm {
+    padding: 10px 120px 10px 0;
+}
+
+.toast-message--span.removing-toast {
+    -webkit-animation: fadeout 400ms;
+    -moz-animation: fadeout 400ms;
+    -o-animation: fadeout 400ms;
+    animation: fadeout 400ms;
+}
+
+.toast-message--span.toast-message--error {
+    background-color: var(--error-color) ;
+}
+
+.toast-message--span:before {
+    content: "\02139" ;
+    font-size: 24px;
+    padding: 0 17px 0 20px;
+}
+
+.toast-message--span.toast-message--error:before {
+    padding: 0 10px 0 13px;
+    content: "\26A0" ;
+}
+
+.toast-message-close--span {
+    position: absolute;
+    right: 15px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .toast-message--span {
+        left: 2vw;
+        right: 2vw;
+    }
+
+    #save-component--div,
+    #io-rename--div {
+        top: 10vh;
+        bottom: 10vh;
+        left: 10vw;
+        right: 10vw;
+    }
+}
+

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fun with Logic Gates</title>
+    <script src="fun.js"></script>
+    <script src="classes/Item.js"></script>
+    <script src="classes/IO.js"></script>
+    <script src="classes/And.js"></script>
+    <script src="classes/Not.js"></script>
+    <script src="classes/Or.js"></script>
+    <script src="classes/Rectangle.js"></script>
+    <script src="classes/Connection.js"></script>
+    <script src="classes/Drawer.js"></script>
+    <script src="classes/Input.js"></script>
+    <script src="classes/Output.js"></script>
+    <script src="classes/Storage.js"></script>
+    <script src="classes/Component.js"></script>
+    <script src="classes/AbstractedComponentSpec.js"></script>
+    <script src="classes/AbstractedComponent.js"></script>
+    <script src="classes/Logger.js"></script>
+    <script src="classes/Toolbar.js"></script>
+    <script src="classes/ToastMessage.js"></script>
+    <link rel="stylesheet" href="fun.css" />
+    <style>
+        body { text-align:center; }
+        #fun-with-logic-gates--nav { margin: auto ; }
+    </style>
+</head>
+<body>
+<h1>Fun with Logic Gates</h1>
+<p>
+    Use AND, OR, and NOT logic gates to create bigger and more
+    complex logic circuits. Save these circuits as components
+    to create even more complex circuits.
+</p>
+<canvas id="canvas" width="1000" height="600"></canvas>
+<script type="application/javascript">
+    fwlg = new FunWithLogicGates("canvas", Logger.logLvl.DEBUG) ;
+</script>
+</body>
+</html>
