@@ -21,8 +21,11 @@ class Connection {
         this.state = this.state === 0 ? 1 : 0 ;
     }
 
-    static fromIds(fwlg, inputId, outputId) {
-        return new Connection(fwlg.getInput(inputId), fwlg.getOutput(outputId)) ;
+    static fromIds(comp, inputId, outputId) {
+        return new Connection(
+            Component.getInputFromComponent(inputId, comp),
+            Component.getOutputFromComponent(outputId, comp)
+        ) ;
     }
 
     toJSON() {

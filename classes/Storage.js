@@ -18,10 +18,20 @@ class Storage {
         try {
             let value = JSON.stringify(object) ;
             localStorage.setItem( `fun-with-logic-gates--${this.key}`, value ) ;
+            this.#setLastUpdated() ;
             return true ;
         } catch ( e ) {
             console.error(e) ;
             return false ;
+        }
+    }
+
+    #setLastUpdated() {
+        try {
+            let value = new Date().getTime().toString() ;
+            localStorage.setItem( `fun-with-logic-gates--last-updated`, value ) ;
+        } catch ( e ) {
+            console.error(e) ;
         }
     }
 }

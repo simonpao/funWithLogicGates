@@ -1,5 +1,6 @@
 class FunWithLogicGates {
     components = {} ;
+    builtIn = ['AND', 'OR', 'NOT'] ;
 
     constructor(id, logLvl) {
         this.logger = new Logger(logLvl, "FunWithLogicGates") ;
@@ -8,9 +9,22 @@ class FunWithLogicGates {
         this.loadState() ;
 
         this.logger.debug(`Initializing canvas on element '#${id}'`) ;
-        this.currentComponent = new Component(id, logLvl, this.components) ;
+        this.currentComponent = new Component(
+            id,
+            logLvl,
+            this.components,
+            null,
+            this.removeComponentCallback.bind(this)
+        ) ;
         this.logger.debug(`Initializing toolbar below element '#${id}'`) ;
-        this.toolbar = new Toolbar(this.currentComponent, logLvl, this.components) ;
+        this.toolbar = new Toolbar(
+            this.currentComponent,
+            logLvl,
+            this.components,
+            this.removeComponentCallback.bind(this),
+            this.editComponentCallback.bind(this),
+            this.duplicateComponentCallback.bind(this)
+        ) ;
 
         this.initSaveButton() ;
     }
@@ -29,6 +43,9 @@ class FunWithLogicGates {
         let componentName = await this.promptForComponentName() ;
 
         if(componentName) {
+            if(this.currentComponent.metadata.editing && componentName !== this.currentComponent.metadata.editing)
+                delete this.components[this.currentComponent.metadata.editing] ;
+            this.currentComponent.metadata.editing = false ;
             this.components[componentName] = new AbstractedComponentSpec(this.currentComponent) ;
             this.toolbar.addNewComponent(componentName, this.components[componentName]) ;
             this.currentComponent.clearCanvasState() ;
@@ -37,8 +54,10 @@ class FunWithLogicGates {
     }
 
     promptForComponentName() {
-        this.currentComponent.placeholder.innerHTML = `<div id="canvas-mask--div"></div><div id='save-component--div'><span class="save-component-close--span">&#10006;</span><div>`+
-            `<input type="text" maxlength="10" id="save-component--input" placeholder="New Component Name" onkeyup="this.value = this.value.toUpperCase();">`+
+        let editing = this.currentComponent.metadata.editing ;
+        this.currentComponent.placeholder.innerHTML = `<div id="canvas-mask--div"></div>`+
+            `<div id='save-component--div'><span class="save-component-close--span">&#10006;</span><div>`+
+            `<input type="text" maxlength="10" id="save-component--input" placeholder="New Component Name" value="${editing || ''}">`+
             `<button id="save-component--button">Save</button>` +
             `</div></div>` ;
 
@@ -48,6 +67,12 @@ class FunWithLogicGates {
             let labelIn = document.querySelector(`#save-component--div #save-component--input`) ;
             labelIn.select() ;
             labelIn.focus() ;
+            labelIn.addEventListener("keyup", (e) => {
+                e.currentTarget.value = e.currentTarget.value.toUpperCase() ;
+                if(e.which === 13) {
+                    save.dispatchEvent(new Event("click")) ;
+                }
+            }) ;
 
             save.addEventListener("click", () => {
                 let componentName = document.querySelector(`#save-component--div #save-component--input`).value ;
@@ -57,7 +82,9 @@ class FunWithLogicGates {
                     return ;
                 }
 
-                if(Object.keys(this.components).includes(componentName)) {
+                if((componentName !== this.currentComponent.metadata.editing &&
+                    Object.keys(this.components).includes(componentName)) ||
+                    this.builtIn.includes(componentName)) {
                     new ToastMessage("Component with this name already exists.", ToastMessage.ERROR).show() ;
                     return ;
                 }
@@ -70,6 +97,35 @@ class FunWithLogicGates {
                 resolve(false) ;
             }) ;
         }) ;
+    }
+
+    removeComponentCallback(name) {
+        let dependant = this.checkComponentDependencies(name) ;
+        if(dependant) {
+            new ToastMessage(`This component cannot be deleted because ${dependant} uses it.`, ToastMessage.ERROR).show() ;
+            return false ;
+        }
+        delete this.components[name] ;
+        this.updateState() ;
+        return true ;
+    }
+
+    editComponentCallback(name) {
+        this.currentComponent.loadComponentSpec(name, this.components[name], true) ;
+    }
+
+    duplicateComponentCallback(name) {
+        this.currentComponent.loadComponentSpec(name, this.components[name], false) ;
+    }
+
+    checkComponentDependencies(name) {
+        for(let i in this.components) {
+            for(let j in this.components[i].items) {
+                if(this.components[i].items[j].name === name)
+                    return i ;
+            }
+        }
+        return false ;
     }
 
     updateState() {
@@ -89,10 +145,33 @@ class FunWithLogicGates {
         }
     }
 
+    loadAllState() {
+        this.components = {} ;
+        this.currentComponent.items = {} ;
+        this.currentComponent.inputs = {} ;
+        this.currentComponent.outputs = {} ;
+        this.currentComponent.connections = [] ;
+
+        this.loadState() ;
+        this.toolbar.loadToolbarState() ;
+        this.currentComponent.loadCanvasState() ;
+
+        this.toolbar.toolbar.replaceWith(this.toolbar.generateToolbar()) ;
+
+        for(let i in this.components)
+            this.toolbar.addNewComponent(i, this.components[i]) ;
+
+        this.toolbar.setListeners() ;
+    }
+
     async clearAllState() {
         if(!await new ToastMessage("Are you sure you want to clear EVERYTHING?").confirm())
             return ;
 
+        this.#actuallyClearAllState() ;
+    }
+
+    #actuallyClearAllState() {
         this.storage.setObject({}) ;
         this.toolbar.resetToolbar() ;
         this.initSaveButton() ;
