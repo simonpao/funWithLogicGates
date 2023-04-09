@@ -6,6 +6,7 @@ on binary inputs (inputs that can take on the value of either 0 or 1).
 
 <img src="/img/nor.png" alt="NOR" width="750px" />
 <img src="/img/srlatch.png" alt="SR-Latch" width="750px" />
+<img src="/img/4add_reg.png" alt="SR-Latch" width="750px" />
 
 An AND gate takes two inputs and produces an output that is 1 if and only if both 
 inputs are 1. In other words, the output is 1 if and only if both inputs are true.
@@ -28,12 +29,15 @@ from scratch every time.
 
 ## Controls
 
-- Use the buttons below the work area to create new inputs, outputs, and gates. 
-- Right-click on items in the work area to reveal a context menu.
+- Use the buttons below the work area to create new inputs, outputs, and gates 
+- Right-click on items in the work area to reveal a context menu
 - Shift+Left-click on inputs or outputs to start a connection
   - Left-click on an input or output to establish the connection
   - An output may only be connected to one input, but each input may be connected to multiple outputs
 - Once connections are complete, click on the "Truth Table" button to generate a table showing how all combinations of inputs affect the output(s)
+- If satisfied with the circuit, click "Save" to abstract the circuit into it's own named component
+  - This will place a new button in the toolbar which can be clicked to add the new component to the work area
+  - Right-click on component buttons to edit or delete created components
 
 ## Usage
 
@@ -51,6 +55,6 @@ Then include `fun.js` and `fun.css` in your HTML file and instantiate a new `Fun
 <!-- ... -->
 <canvas id="canvas" width="1000" height="600"></canvas>
 <script type="application/javascript">
-    new FunWithLogicGates("canvas", Logger.logLvl.INFO) ;
+  new FunWithLogicGates("canvas", Logger.logLvl.INFO) ;
 </script>
 ```

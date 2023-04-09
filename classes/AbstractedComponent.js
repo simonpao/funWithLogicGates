@@ -1,8 +1,10 @@
 class AbstractedComponent extends Item {
-    constructor(name, spec, id, x, y, w, h, color) {
+    constructor(name, spec, specs, id, x, y, w, h, color) {
         super(Component.types.CUSTOM, id, x, y, w, h, color, spec.numberOfOutputs, spec.numberOfInputs) ;
 
-        this.spec = new AbstractedComponentSpec(spec) ;
+        this.spec = new AbstractedComponentSpec(
+            AbstractedComponentSpec.copyNewComponentSpec(spec, specs)
+        ) ;
         this.name = name ;
 
         let inputKeys = Object.keys(this.spec.inputs) ;
@@ -26,16 +28,16 @@ class AbstractedComponent extends Item {
         // Inputs
         let marginY = this.h/(this.spec.numberOfInputs+1) ;
         for(let i = 0; i < this.spec.numberOfInputs; i++) {
-            let posY = this.y+(marginY*(i+1)) ;
-            this.outputs[i].x = this.x ;
+            let posY = this.y+(marginY*(i+1))+5 ;
+            this.outputs[i].x = this.x + 5 ;
             this.outputs[i].y = posY ;
         }
 
         // Outputs
         marginY = this.h/(this.spec.numberOfOutputs+1) ;
         for(let i = 0; i < this.spec.numberOfOutputs; i++) {
-            let posY = this.y+(marginY*(i+1)) ;
-            this.inputs[i].x = (this.x + this.w) - 10 ;
+            let posY = this.y+(marginY*(i+1))+5 ;
+            this.inputs[i].x = (this.x + this.w) - 5 ;
             this.inputs[i].y = posY ;
         }
 

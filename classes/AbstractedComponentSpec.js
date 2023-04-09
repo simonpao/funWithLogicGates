@@ -52,4 +52,8 @@ class AbstractedComponentSpec {
         }
         return resp ;
     }
+
+    static copyNewComponentSpec(state, specs) {
+        return Component.copyNewComponent(JSON.parse(JSON.stringify(state)), specs) ;
+    }
 }

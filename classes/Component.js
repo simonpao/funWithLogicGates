@@ -24,7 +24,7 @@ class Component {
         connections: {}
     } ;
 
-    constructor(id, logLvl = Logger.logLvl.INFO, specs, state) {
+    constructor(id, logLvl = Logger.logLvl.INFO, specs, state, removeComponentCallback) {
         // Whether this is being loaded for use on the canvas or an AbstractedComponentSpec
         if(id == null && logLvl == null && !!state) {
             this.constructFromState(state, specs);
@@ -34,6 +34,7 @@ class Component {
         this.logger = new Logger(logLvl, "Component") ;
         this.storage = new Storage('canvas-state') ;
         this.color = Component.startColor ;
+        this.specs = specs ;
 
         this.canvas = document.getElementById(id);
         this.metadata = {
@@ -60,6 +61,8 @@ class Component {
         this.indices.outputs.index = 0 ;
         this.indices.connections.index = 0 ;
 
+        this.removeComponentCallback = removeComponentCallback ;
+
         this.canvas.addEventListener("contextmenu", this.displayContextMenu.bind(this));
         this.canvas.addEventListener("mousedown", this.mouseClick.bind(this));
         this.canvas.addEventListener("mouseup", this.mouseClickEnd.bind(this));
@@ -71,7 +74,24 @@ class Component {
         this.loadCanvasState(specs) ;
     }
 
-    generateTruthTable() {
+    loadComponentSpec(name, spec, editing) {
+        this.clearCanvasState() ;
+        this.items = spec.items ;
+        this.inputs = spec.inputs ;
+        this.outputs = spec.outputs ;
+        this.connections = spec.connections ;
+
+        if(editing) this.metadata.editing = name ;
+
+        this.indices.items.index = Object.keys(spec.items).length ;
+        this.indices.inputs.index = Object.keys(spec.inputs).length ;
+        this.indices.outputs.index = Object.keys(spec.outputs).length ;
+        this.indices.connections.index = spec.connections.length ;
+
+        this.updateCanvasState() ;
+    }
+
+    async generateTruthTable() {
         let inIds = Object.keys(this.inputs) ;
         let numIn = inIds.length ;
         let outIds = Object.keys(this.outputs) ;
@@ -83,52 +103,70 @@ class Component {
             return ;
         }
 
-        let html = "<div id='canvas-mask--div'></div><div id='truth-table--div'><div class='truth-table-scroll--div'><table><thead><tr>" ;
-        let header = ""
-        for(let i in inIds) {
-            html += `<th class="truth-table-in--th">${inIds[i]}</th>` ;
-            header += ` | ${inIds[i]}` ;
-        }
-        for(let i in outIds) {
-            html += `<th class="truth-table-out--th">${outIds[i]}</th>` ;
-            header += ` | ${outIds[i]}` ;
-        }
-        html += "</tr></thead><tbody>" ;
-        header += " |" ;
-        this.logger.info(" ".padEnd(header.length, "-")) ;
-        this.logger.info(header) ;
-        this.logger.info(" ".padEnd(header.length, "-")) ;
-
-        for(let i = 0; i < combinations; i++) {
-            html += "<tr>" ;
-            let row = "" ;
-            let binary = (i >>> 0).toString(2).padStart(numIn, '0').split("") ;
-
-            let c = 0 ;
-            for(let n of binary) {
-                html += `<td class="truth-table-in--td">${n}</td>` ;
-                row += ` | ${n.padStart(inIds[c].length)}` ;
-                this.inputs[inIds[c]].state = parseInt(n) ;
-                this.propagateState(this.inputs[inIds[c]]) ;
-                c ++ ;
+        if(numIn > 8) {
+            if(!await new ToastMessage(
+                `Calculating a truth table for ${combinations} input combinations could take a very long time ` +
+                `and may cause your browser to hang, are you sure you want to continue?`, ToastMessage.ERROR
+            ).confirm()) {
+                return ;
             }
-
-            for(let n = 0; n < numOut; n++) {
-                html += `<td class="truth-table-out--td">${this.outputs[outIds[n]].state}</td>` ;
-                row += ` | ${(this.outputs[outIds[n]].state).toString().padStart(outIds[n].length)}` ;
-            }
-            row += " |" ;
-            html += "</tr>" ;
-
-            this.logger.info(row) ;
-            this.redrawCanvas() ;
         }
-        this.logger.info(" ".padEnd(header.length, "-")) ;
-        html += "</tbody></table></div><button id='truth-table-close--button'>Close</button></div>" ;
-        this.placeholder.innerHTML = html ;
-        document.getElementById("truth-table-close--button").addEventListener("click", () => {
-            this.placeholder.innerHTML = "" ;
-        })
+
+        this.placeholder.innerHTML = '<div id="canvas-mask--div"></div>' ;
+        this.computeTruthTable(inIds, numIn, outIds, numOut, combinations).then((html) => {
+            this.placeholder.innerHTML = html ;
+            document.getElementById("truth-table-close--button").addEventListener("click", () => {
+                this.placeholder.innerHTML = "" ;
+            }) ;
+        }) ;
+    }
+
+    computeTruthTable(inIds, numIn, outIds, numOut, combinations) {
+        return new Promise((resolve) => {
+            let html = "<div id='canvas-mask--div'></div><div id='truth-table--div'><div class='truth-table-scroll--div'><table><thead><tr>" ;
+            let header = ""
+            for(let i in inIds) {
+                html += `<th class="truth-table-in--th">${this.inputs[inIds[i]].label}</th>` ;
+                header += ` | ${inIds[i]}` ;
+            }
+            for(let i in outIds) {
+                html += `<th class="truth-table-out--th">${this.outputs[outIds[i]].label}</th>` ;
+                header += ` | ${outIds[i]}` ;
+            }
+            html += "</tr></thead><tbody>" ;
+            header += " |" ;
+            this.logger.info(" ".padEnd(header.length, "-")) ;
+            this.logger.info(header) ;
+            this.logger.info(" ".padEnd(header.length, "-")) ;
+
+            for(let i = 0; i < combinations; i++) {
+                html += "<tr>" ;
+                let row = "" ;
+                let binary = (i >>> 0).toString(2).padStart(numIn, '0').split("") ;
+
+                let c = 0 ;
+                for(let n of binary) {
+                    html += `<td class="truth-table-in--td">${n}</td>` ;
+                    row += ` | ${n.padStart(inIds[c].length)}` ;
+                    this.inputs[inIds[c]].state = parseInt(n) ;
+                    this.propagateState(this.inputs[inIds[c]]) ;
+                    c ++ ;
+                }
+
+                for(let n = 0; n < numOut; n++) {
+                    html += `<td class="truth-table-out--td">${this.outputs[outIds[n]].state}</td>` ;
+                    row += ` | ${(this.outputs[outIds[n]].state).toString().padStart(outIds[n].length)}` ;
+                }
+                row += " |" ;
+                html += "</tr>" ;
+
+                this.logger.info(row) ;
+                this.redrawCanvas() ;
+            }
+            this.logger.info(" ".padEnd(header.length, "-")) ;
+            html += "</tbody></table></div><button id='truth-table-close--button'>Close</button></div>" ;
+            resolve(html) ;
+        }) ;
     }
 
     newItem(type, name, componentSpec) {
@@ -138,7 +176,7 @@ class Component {
 
         if(type === Component.types.CUSTOM) {
             dim.w = 120 ;
-            dim.h = (Math.max(Object.keys(componentSpec.inputs).length, Object.keys(componentSpec.outputs).length)*(dim.h/2)) ;
+            dim.h = ((Math.max(Object.keys(componentSpec.inputs).length, Object.keys(componentSpec.outputs).length)*(dim.h/2)))+10 ;
         }
 
         while(this.itemAtLocation(loc.x, loc.y) ||
@@ -231,7 +269,7 @@ class Component {
             return ;
         }
 
-        this.items[id] = new AbstractedComponent(name, componentSpec, id, x, y, w, h, color) ;
+        this.items[id] = new AbstractedComponent(name, componentSpec, this.specs, id, x, y, w, h, color) ;
 
         this.drawer.fillCustom(name, componentSpec, x, y, w, h, color);
     }
@@ -339,27 +377,42 @@ class Component {
     }
 
     getInput(id) {
-        if(typeof this.inputs[id] !== "undefined")
-            return this.inputs[id] ;
+        return Component.getInputFromComponent(id, this) ;
+    }
+
+    static getInputFromComponent(id, obj) {
+        if(typeof obj.inputs[id] !== "undefined")
+            return obj.inputs[id] ;
         else {
             let ids = id.split('_') ;
-            return this.getItem(ids[0]) && this.getItem(ids[0]).inputs ?
-                this.getItem(ids[0]).inputs[ids[2]] : null ;
+            return obj.items[ids[0]] && obj.items[ids[0]].inputs ?
+                obj.items[ids[0]].inputs[ids[2]] : null ;
         }
     }
 
     getOutput(id) {
-        if(typeof this.outputs[id] !== "undefined")
-            return this.outputs[id] ;
+        return Component.getOutputFromComponent(id, this) ;
+    }
+
+    static getOutputFromComponent(id, obj) {
+        if(typeof obj.outputs[id] !== "undefined")
+            return obj.outputs[id] ;
         else {
             let ids = id.split('_') ;
-            return this.getItem(ids[0]) && this.getItem(ids[0]).outputs ?
-                this.getItem(ids[0]).outputs[ids[2]] : null ;
+            return obj.items[ids[0]] && obj.items[ids[0]].outputs ?
+                obj.items[ids[0]].outputs[ids[2]] : null ;
         }
     }
 
     getIO(id) {
         return this.getInput(id) ?? this.getOutput(id) ;
+    }
+
+    isCanvasInUse() {
+        return Object.keys(this.items).length ||
+            Object.keys(this.inputs).length ||
+            Object.keys(this.outputs).length ||
+            this.connections.length ;
     }
 
     somethingAtLocation(x, y) {
@@ -506,6 +559,8 @@ class Component {
 
         if(something.type === "item") {
             menuItems ++ ;
+            html += `<li><button data-id="${something.value.id}" data-type="item" id="context-menu--paint">Paint</button></li>` ;
+            menuItems ++ ;
             html += `<li><button data-id="${something.value.id}" data-type="item" id="context-menu--disconnect">Disconnect</button></li>` ;
             menuItems ++ ;
             html += `<li><button data-id="${something.value.id}" data-type="item" id="context-menu--remove">Remove</button></li>` ;
@@ -536,6 +591,9 @@ class Component {
             e.preventDefault() ;
             this.placeholder.innerHTML += html ;
 
+            let paint = document.getElementById('context-menu--paint') ;
+            if(paint) paint.addEventListener("click", this.contextMenuItemPaint.bind(this)) ;
+
             let remove = document.getElementById('context-menu--remove') ;
             if(remove) remove.addEventListener("click", this.contextMenuObjectRemove.bind(this)) ;
 
@@ -552,6 +610,15 @@ class Component {
             menu.style.top = `${absPos.y}px` ;
             menu.style.left = `${absPos.x-55}px` ;
         }
+    }
+
+    contextMenuItemPaint(e) {
+        let id = e.currentTarget.dataset.id ;
+        let type = e.currentTarget.dataset.type ;
+        this.removeContextMenu() ;
+        this.getItem(id).color = this.color ;
+        this.redrawCanvas() ;
+        this.updateCanvasState() ;
     }
 
     contextMenuObjectRemove(e) {
@@ -606,7 +673,7 @@ class Component {
 
     renamePrompt(io) {
         this.placeholder.innerHTML = `<div id="canvas-mask--div"></div><div id='io-rename--div'><span class="io-rename-close--span">&#10006;</span><div>`+
-            `<input type="text" maxlength="5" id="io-rename--input" placeholder="New Label" value="${io.label}" onkeyup="this.value = this.value.toUpperCase();">`+
+            `<input type="text" maxlength="5" id="io-rename--input" placeholder="New Label" value="${io.label}">`+
             `<button id="io-rename--button">Rename</button>` +
             `</div></div>` ;
 
@@ -616,6 +683,12 @@ class Component {
             let labelIn = document.querySelector(`#io-rename--div #io-rename--input`) ;
             labelIn.select() ;
             labelIn.focus() ;
+            labelIn.addEventListener("keyup", (e) => {
+                e.currentTarget.value = e.currentTarget.value.toUpperCase() ;
+                if(e.which === 13) {
+                    rename.dispatchEvent(new Event("click")) ;
+                }
+            }) ;
 
             rename.addEventListener("click", () => {
                 let newLabel = document.querySelector(`#io-rename--div #io-rename--input`).value ;
@@ -894,10 +967,10 @@ class Component {
         this.redrawCanvas() ;
     }
 
-    loadCanvasState(specs) {
+    loadCanvasState() {
         let state = this.storage.getObject() ;
 
-        this.setFromState(state, specs) ;
+        this.setFromState(state) ;
 
         if(state.indices) {
             this.indices.items.index = state.indices.items.index;
@@ -918,10 +991,26 @@ class Component {
     }
 
     setFromState(state, specs) {
+        let newState = Component.copyNewComponent(state, specs ?? this.specs) ;
+
+        this.items = newState.items ;
+        this.inputs = newState.inputs ;
+        this.outputs = newState.outputs ;
+        this.connections = newState.connections ;
+    }
+
+    static copyNewComponent(state, specs) {
+        let returnObject = {
+            items: {},
+            inputs: {},
+            outputs: {},
+            connections: []
+        } ;
+
         for(let i in state.items)
             switch(state.items[i].type) {
                 case Component.types.RECT:
-                    this.items[i] = new Rectangle(
+                    returnObject.items[i] = new Rectangle(
                         state.items[i].id,
                         state.items[i].x,
                         state.items[i].y,
@@ -931,7 +1020,7 @@ class Component {
                     ) ;
                     break ;
                 case Component.types.AND:
-                    this.items[i] = new And(
+                    returnObject.items[i] = new And(
                         state.items[i].id,
                         state.items[i].x,
                         state.items[i].y,
@@ -941,7 +1030,7 @@ class Component {
                     ) ;
                     break ;
                 case Component.types.OR:
-                    this.items[i] = new Or(
+                    returnObject.items[i] = new Or(
                         state.items[i].id,
                         state.items[i].x,
                         state.items[i].y,
@@ -951,7 +1040,7 @@ class Component {
                     ) ;
                     break ;
                 case Component.types.NOT:
-                    this.items[i] = new Not(
+                    returnObject.items[i] = new Not(
                         state.items[i].id,
                         state.items[i].x,
                         state.items[i].y,
@@ -961,9 +1050,10 @@ class Component {
                     ) ;
                     break ;
                 case Component.types.CUSTOM:
-                    this.items[i] = new AbstractedComponent(
+                    returnObject.items[i] = new AbstractedComponent(
                         state.items[i].spec,
                         specs[state.items[i].spec],
+                        specs,
                         state.items[i].id,
                         state.items[i].x,
                         state.items[i].y,
@@ -974,23 +1064,25 @@ class Component {
                     break ;
             }
         for(let i in state.inputs)
-            this.inputs[i] = new Input(
+            returnObject.inputs[i] = new Input(
                 state.inputs[i].id,
                 state.inputs[i].label,
                 state.inputs[i].state
-            )
+            ) ;
         for(let i in state.outputs)
-            this.outputs[i] = new Output(
+            returnObject.outputs[i] = new Output(
                 state.outputs[i].id,
                 state.outputs[i].label,
                 state.outputs[i].state
-            )
+            ) ;
         for(let i in state.connections)
-            this.connections[i] = Connection.fromIds(
-                this,
+            returnObject.connections[i] = Connection.fromIds(
+                returnObject,
                 state.connections[i].input,
                 state.connections[i].output
-            )
+            ) ;
+
+        return returnObject ;
     }
 
     redrawCanvas() {
@@ -1010,6 +1102,11 @@ class Component {
     }
 
     clearCanvasState() {
+        if(this.metadata.editing) {
+            if(!this.removeComponentCallback(this.metadata.editing))
+                return ;
+        }
+
         this.drawer.clearCanvas() ;
 
         this.items = {} ;

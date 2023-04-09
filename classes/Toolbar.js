@@ -1,8 +1,18 @@
 class Toolbar {
-    constructor(component, logLvl = Logger.logLvl.INFO, savedComponents) {
+    constructor(
+        component,
+        logLvl = Logger.logLvl.INFO,
+        savedComponents,
+        removeComponentCallback,
+        editComponentCallback,
+        duplicateComponentCallback
+    ) {
         this.logger = new Logger(logLvl, "Toolbar") ;
         this.component = component ;
         this.storage = new Storage('toolbar-state') ;
+        this.removeComponentCallback = removeComponentCallback ;
+        this.editComponentCallback = editComponentCallback ;
+        this.duplicateComponentCallback = duplicateComponentCallback ;
 
         this.loadToolbarState() ;
         this.logger.debug(`color: ${this.color}`) ;
@@ -65,7 +75,77 @@ class Toolbar {
         compBtn.innerText = name ;
         span.before(compBtn) ;
 
-        compBtn.addEventListener("click", this.newCustom.bind(this, name, componentSpec))
+        compBtn.addEventListener("click", this.newCustom.bind(this, name, componentSpec)) ;
+        compBtn.addEventListener("contextmenu", this.displayContextMenu.bind(this, name));
+    }
+
+    displayContextMenu(name, e) {
+        let x = e.clientX ?? e.touches[0].clientX ;
+        let y = e.clientY ?? e.touches[0].clientY ;
+        e.preventDefault() ;
+
+        let node = document.createElement("menu") ;
+        node.id = 'context-menu' ;
+        node.innerHTML = `<li><button data-name="${name}" id="context-menu--edit">Edit</button></li>` +
+            `<li><button data-name="${name}" id="context-menu--duplicate">Duplicate</button></li>` +
+            `<li><button data-name="${name}" id="context-menu--delete">Delete</button></li>` ;
+
+        this.component.placeholder.innerHTML = node.outerHTML ;
+
+        let removeComponent = document.getElementById('context-menu--delete') ;
+        removeComponent.addEventListener("click", this.removeComponent.bind(this)) ;
+
+        let duplicateComponent = document.getElementById('context-menu--duplicate') ;
+        duplicateComponent.addEventListener("click", this.duplicateComponent.bind(this)) ;
+
+        let editComponent = document.getElementById('context-menu--edit') ;
+        editComponent.addEventListener("click", this.editComponent.bind(this)) ;
+
+        let menu = document.getElementById('context-menu') ;
+        menu.style.top = `${y}px` ;
+        menu.style.left = `${x-55}px` ;
+    }
+
+    async removeComponent(e) {
+        let name = e.currentTarget.dataset.name ;
+        this.removeContextMenu() ;
+        if(await new ToastMessage(
+            `Are you sure you want to delete the component ${name}? This cannot be undone.`
+        ).confirm()) {
+            if (this.removeComponentCallback(name)) {
+                let elem = document.getElementById(`add-${name}--button`);
+                if (elem) elem.remove();
+            }
+        }
+    }
+
+    async duplicateComponent(e) {
+        let name = e.currentTarget.dataset.name ;
+        this.removeContextMenu() ;
+
+        if(!this.component.isCanvasInUse() || await new ToastMessage(
+            "This will clear the work area and any unsaved work will be lost, do you want to continue?"
+        ).confirm()) {
+            this.duplicateComponentCallback(name) ;
+        }
+    }
+
+    async editComponent(e) {
+        let name = e.currentTarget.dataset.name ;
+        this.removeContextMenu() ;
+
+        if(!this.component.isCanvasInUse() || await new ToastMessage(
+            "This will clear the work area and any unsaved work will be lost, do you want to continue?"
+        ).confirm()) {
+            let elem = document.getElementById(`add-${name}--button`) ;
+            if(elem) elem.remove() ;
+            this.editComponentCallback(name) ;
+        }
+    }
+
+    removeContextMenu() {
+        let elem = document.getElementById('context-menu') ;
+        if(elem) elem.remove() ;
     }
 
     setColor() {
