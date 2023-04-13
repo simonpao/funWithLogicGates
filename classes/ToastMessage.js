@@ -85,6 +85,7 @@ class ToastMessage {
 
         setTimeout(() => {
             let element = document.getElementById(this.id) ;
+            if(!element) return ;
             let elemOffsetTop = element.offsetTop ;
             let elemOffsetHeight = element.offsetHeight ;
             document.body.removeChild(element) ;

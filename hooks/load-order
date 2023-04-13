@@ -1,5 +1,6 @@
 classes/Item.js
 classes/IO.js
+classes/ComponentInterface.js
 classes/And.js
 classes/Not.js
 classes/Or.js

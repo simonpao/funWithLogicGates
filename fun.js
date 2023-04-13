@@ -111,7 +111,13 @@ class FunWithLogicGates {
     }
 
     editComponentCallback(name) {
+        let dependant = this.checkComponentDependencies(name) ;
+        if(dependant) {
+            new ToastMessage(`This component cannot be edited because ${dependant} uses it.`, ToastMessage.ERROR).show() ;
+            return false ;
+        }
         this.currentComponent.loadComponentSpec(name, this.components[name], true) ;
+        return true ;
     }
 
     duplicateComponentCallback(name) {
