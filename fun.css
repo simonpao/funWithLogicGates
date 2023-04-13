@@ -15,7 +15,7 @@
 }
 
 #context-menu {
-    position: fixed;
+    position: absolute;
     padding: 5px;
     background-color: var(--context-menu-background);
     border-radius: 5px;

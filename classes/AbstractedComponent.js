@@ -1,6 +1,6 @@
 class AbstractedComponent extends Item {
-    constructor(name, spec, specs, id, x, y, w, h, color) {
-        super(Component.types.CUSTOM, id, x, y, w, h, color, spec.numberOfOutputs, spec.numberOfInputs) ;
+    constructor(name, type, spec, specs, id, x, y, w, h, color) {
+        super(type, id, x, y, w, h, color, spec.numberOfOutputs, spec.numberOfInputs) ;
 
         this.spec = new AbstractedComponentSpec(
             AbstractedComponentSpec.copyNewComponentSpec(spec, specs)
@@ -25,6 +25,23 @@ class AbstractedComponent extends Item {
     }
 
     updateIOLocations() {
+        switch(this.type) {
+            case Component.types.CUSTOM:
+                this.#updateCustomIOLocations() ;
+                break ;
+            case Component.types.XOR:
+            case Component.types.NOR:
+            case Component.types.XNOR:
+            case Component.types.NAND:
+                this.#update2InIOLocations() ;
+                break ;
+            case Component.types.BUF:
+                this.#update1InIOLocations() ;
+                break ;
+        }
+    }
+
+    #updateCustomIOLocations() {
         // Inputs
         let marginY = this.h/(this.spec.numberOfInputs+1) ;
         for(let i = 0; i < this.spec.numberOfInputs; i++) {
@@ -40,7 +57,22 @@ class AbstractedComponent extends Item {
             this.inputs[i].x = (this.x + this.w) - 5 ;
             this.inputs[i].y = posY ;
         }
+    }
 
+    #update2InIOLocations() {
+        this.outputs[0].x = this.x+5 ;
+        this.outputs[0].y = this.y+(this.h/4) ;
+        this.outputs[1].x = this.x+5 ;
+        this.outputs[1].y = (this.y+this.h)-(this.h/4) ;
+        this.inputs[0].x = (this.x+this.w)-5 ;
+        this.inputs[0].y = this.y+(this.h/2) ;
+    }
+
+    #update1InIOLocations() {
+        this.outputs[0].x = this.x+5 ;
+        this.outputs[0].y = this.y+(this.h/2) ;
+        this.inputs[0].x = (this.x+this.w)-5 ;
+        this.inputs[0].y = this.y+(this.h/2) ;
     }
 
     determineInputState() {
@@ -55,6 +87,37 @@ class AbstractedComponent extends Item {
         for(let o of outIds) {
             this.inputs.filter(item => item.specId === o)[0].state = this.spec.outputs[o].state ;
         }
+    }
+
+    static determineType(name, spec) {
+        let numOut = spec.numberOfOutputs, numIn = spec.numberOfInputs ;
+        if(numOut > 1 || numIn > 2)
+            return Component.types.CUSTOM ;
+
+        switch(name) {
+            case "XOR":
+                if(numOut === 1 || numIn === 2)
+                    return Component.types.XOR ;
+                break ;
+            case "NOR":
+                if(numOut === 1 || numIn === 2)
+                    return Component.types.NOR ;
+                break ;
+            case "XNOR":
+                if(numOut === 1 || numIn === 2)
+                    return Component.types.XNOR ;
+                break ;
+            case "NAND":
+                if(numOut === 1 || numIn === 2)
+                    return Component.types.NAND ;
+                break ;
+            case "BUF":
+                if(numOut === 1 || numIn === 1)
+                    return Component.types.BUF ;
+                break ;
+        }
+
+        return Component.types.CUSTOM ;
     }
 
     toJSON() {

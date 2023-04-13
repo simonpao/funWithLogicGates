@@ -1,4 +1,6 @@
 class Toolbar {
+    static MAX_IO = 25 ;
+
     constructor(
         component,
         logLvl = Logger.logLvl.INFO,
@@ -47,6 +49,8 @@ class Toolbar {
         this.addOutputBtn.addEventListener("click", this.newOutput.bind(this)) ;
         this.clearBtn.addEventListener("click", this.clearCanvas.bind(this)) ;
         this.truthBtn.addEventListener("click", this.genTruthTable.bind(this)) ;
+
+        document.addEventListener("click", this.removeContextMenu.bind(this)) ;
     }
 
     generateToolbar() {
@@ -80,8 +84,7 @@ class Toolbar {
     }
 
     displayContextMenu(name, e) {
-        let x = e.clientX ?? e.touches[0].clientX ;
-        let y = e.clientY ?? e.touches[0].clientY ;
+        let { x, y } = this.component.getDocumentOffset(e) ;
         e.preventDefault() ;
 
         let node = document.createElement("menu") ;
@@ -102,7 +105,7 @@ class Toolbar {
         editComponent.addEventListener("click", this.editComponent.bind(this)) ;
 
         let menu = document.getElementById('context-menu') ;
-        menu.style.top = `${y}px` ;
+        menu.style.top = `${y+15}px` ;
         menu.style.left = `${x-55}px` ;
     }
 
@@ -137,9 +140,10 @@ class Toolbar {
         if(!this.component.isCanvasInUse() || await new ToastMessage(
             "This will clear the work area and any unsaved work will be lost, do you want to continue?"
         ).confirm()) {
-            let elem = document.getElementById(`add-${name}--button`) ;
-            if(elem) elem.remove() ;
-            this.editComponentCallback(name) ;
+            if (this.editComponentCallback(name)) {
+                let elem = document.getElementById(`add-${name}--button`);
+                if (elem) elem.remove();
+            }
         }
     }
 
@@ -167,14 +171,23 @@ class Toolbar {
     }
 
     newCustom(name, componentSpec) {
-        this.component.newItem(Component.types.CUSTOM, name, componentSpec) ;
+        let type = AbstractedComponent.determineType(name, componentSpec)
+        this.component.newItem(type, name, componentSpec) ;
     }
 
     newInput() {
+        if(Object.keys(this.component.inputs).length >= Toolbar.MAX_IO) {
+            new ToastMessage(`There is a maximum of ${Toolbar.MAX_IO} inputs.`, ToastMessage.ERROR).show() ;
+            return ;
+        }
         this.component.addInput() ;
     }
 
     newOutput() {
+        if(Object.keys(this.component.outputs).length >= Toolbar.MAX_IO) {
+            new ToastMessage(`There is a maximum of ${Toolbar.MAX_IO} outputs.`, ToastMessage.ERROR).show() ;
+            return ;
+        }
         this.component.addOutput() ;
     }
 

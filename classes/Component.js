@@ -1,22 +1,23 @@
-class Component {
+class Component extends ComponentInterface {
     static types = {
         RECT: 0x00,
         AND: 0x01,
         OR: 0x02,
         NOT: 0x03,
-        CUSTOM: 0x04
+        CUSTOM: 0x04,
+        XOR: 0x05,
+        NOR: 0x06,
+        XNOR: 0x07,
+        NAND: 0x08,
+        BUF: 0x09
     } ;
 
     static startColor = "#0099FF" ;
 
+    touch = {} ;
     metadata = {} ;
-    items = {} ;
     dragging = {} ;
     connecting = {} ;
-    propagating = [] ;
-    inputs = {} ;
-    outputs = {} ;
-    connections = [] ;
     indices = {
         items: {},
         inputs: {},
@@ -25,6 +26,7 @@ class Component {
     } ;
 
     constructor(id, logLvl = Logger.logLvl.INFO, specs, state, removeComponentCallback) {
+        super() ;
         // Whether this is being loaded for use on the canvas or an AbstractedComponentSpec
         if(id == null && logLvl == null && !!state) {
             this.constructFromState(state, specs);
@@ -68,8 +70,6 @@ class Component {
         this.canvas.addEventListener("mouseup", this.mouseClickEnd.bind(this));
         this.canvas.addEventListener("mouseout", this.mouseClickEnd.bind(this));
         this.canvas.addEventListener("touchstart", this.touchStart.bind(this));
-        this.canvas.addEventListener("touchend", this.touchEnd.bind(this));
-        this.canvas.addEventListener("touchcancel", this.touchEnd.bind(this));
 
         this.loadCanvasState(specs) ;
     }
@@ -183,7 +183,7 @@ class Component {
               this.itemAtLocation(loc.x+dim.w, loc.y+dim.h) ||
               this.itemAtLocation(loc.x, loc.y+dim.h) ||
               this.itemAtLocation(loc.x+dim.w, loc.y)) {
-            loc.y += dim.h+5;
+            loc.y += 10;
             if(loc.y > this.metadata.canvas.height - dim.h) {
                 new ToastMessage("No more room for new components. Move some items and try again.", ToastMessage.ERROR).show() ;
                 this.logger.error("No more room for new components.") ;
@@ -193,24 +193,41 @@ class Component {
 
         switch(type) {
             case Component.types.RECT:
+                this.indices.items.index = this.getNextAvailableIndex('rect', this.indices.items.index) ;
                 this.addRectangle('rect'+this.indices.items.index, loc.x, loc.y, dim.w, dim.h, color) ;
                 break ;
             case Component.types.AND:
+                this.indices.items.index = this.getNextAvailableIndex('and', this.indices.items.index) ;
                 this.addAndGate('and'+this.indices.items.index, loc.x, loc.y, dim.w, dim.h, color) ;
                 break ;
             case Component.types.OR:
+                this.indices.items.index = this.getNextAvailableIndex('or', this.indices.items.index) ;
                 this.addOrGate('or'+this.indices.items.index, loc.x, loc.y, dim.w, dim.h, color) ;
                 break ;
             case Component.types.NOT:
+                this.indices.items.index = this.getNextAvailableIndex('not', this.indices.items.index) ;
                 this.addNotGate('not'+this.indices.items.index, loc.x, loc.y, dim.w, dim.h, color) ;
                 break ;
             case Component.types.CUSTOM:
-                this.addCustom(name, componentSpec, this.indices.items.index, loc.x, loc.y, dim.w, dim.h, color) ;
+            case Component.types.XOR:
+            case Component.types.NOR:
+            case Component.types.XNOR:
+            case Component.types.NAND:
+            case Component.types.BUF:
+                this.indices.items.index = this.getNextAvailableIndex(name, this.indices.items.index) ;
+                this.addCustom(name, type, componentSpec, this.indices.items.index, loc.x, loc.y, dim.w, dim.h, color) ;
                 break ;
         }
 
         this.indices.items.index ++ ;
         this.updateCanvasState() ;
+    }
+
+    getNextAvailableIndex(idPrefix, index) {
+        while(this.itemExists(idPrefix+index)) {
+            index ++ ;
+        }
+        return index ;
     }
 
     itemExists(id) {
@@ -261,7 +278,7 @@ class Component {
         this.drawer.fillNot(x, y, w, h, color);
     }
 
-    addCustom(name, componentSpec, index, x, y, w, h, color) {
+    addCustom(name, type, componentSpec, index, x, y, w, h, color) {
         let id = name+index ;
 
         if(this.itemExists(id)) {
@@ -269,7 +286,7 @@ class Component {
             return ;
         }
 
-        this.items[id] = new AbstractedComponent(name, componentSpec, this.specs, id, x, y, w, h, color) ;
+        this.items[id] = new AbstractedComponent(name, type, componentSpec, this.specs, id, x, y, w, h, color) ;
 
         this.drawer.fillCustom(name, componentSpec, x, y, w, h, color);
     }
@@ -326,6 +343,21 @@ class Component {
             case Component.types.CUSTOM:
                 this.drawer.fillCustom(item.name, item.spec, item.x, item.y, item.w, item.h, item.color);
                 break ;
+            case Component.types.XOR:
+                this.drawer.fillXor(item.x, item.y, item.w, item.h, item.color);
+                break ;
+            case Component.types.NOR:
+                this.drawer.fillNor(item.x, item.y, item.w, item.h, item.color);
+                break ;
+            case Component.types.XNOR:
+                this.drawer.fillXnor(item.x, item.y, item.w, item.h, item.color);
+                break ;
+            case Component.types.NAND:
+                this.drawer.fillNand(item.x, item.y, item.w, item.h, item.color);
+                break ;
+            case Component.types.BUF:
+                this.drawer.fillBuffer(item.x, item.y, item.w, item.h, item.color);
+                break ;
         }
     }
 
@@ -360,10 +392,6 @@ class Component {
         this.updateCanvasState() ;
     }
 
-    getItem(id) {
-        return this.items[id] ;
-    }
-
     getAllItems() {
         return this.items ;
     }
@@ -385,6 +413,7 @@ class Component {
             return obj.inputs[id] ;
         else {
             let ids = id.split('_') ;
+            if(ids[1] === "out") return null ;
             return obj.items[ids[0]] && obj.items[ids[0]].inputs ?
                 obj.items[ids[0]].inputs[ids[2]] : null ;
         }
@@ -399,6 +428,7 @@ class Component {
             return obj.outputs[id] ;
         else {
             let ids = id.split('_') ;
+            if(ids[1] === "in") return null ;
             return obj.items[ids[0]] && obj.items[ids[0]].outputs ?
                 obj.items[ids[0]].outputs[ids[2]] : null ;
         }
@@ -478,7 +508,7 @@ class Component {
         return false ;
     }
 
-    parseInput(e) {
+    parseInput(e, touch = false) {
         let { x, y } = this.getCanvasOffset(e) ;
         this.logger.debug(`${x}, ${y}`) ;
 
@@ -494,7 +524,9 @@ class Component {
             let io = input ? input : output;
             this.logger.debug(`${type} ${io.id} at location ${x}, ${y}`);
 
-            if (e.getModifierState("Shift") && !this.connecting.isConnecting) {
+            if (typeof e.getModifierState === "function" &&
+                e.getModifierState("Shift") &&
+                !this.connecting.isConnecting) {
                 this.startIOConnect(e, io.id, type);
             } else {
                 if(type === "output" || typeof this.inputs[io.id] === "undefined") return ;
@@ -507,7 +539,7 @@ class Component {
         }
 
         let i = this.itemAtLocation(x, y) ;
-        if(i !== false) {
+        if(i !== false && !touch) {
             this.dragStart(i, x, y);
         }
     }
@@ -539,17 +571,56 @@ class Component {
     }
 
     touchStart(e) {
+        this.removeContextMenu() ;
         e.preventDefault() ;
-        this.parseInput(e) ;
+        if(this.dragging.id)
+            this.dragEnd() ;
+
+        this.touch.callbackEnd = this.touchEndCallback.bind(this, e) ;
+        this.touch.callbackMove = this.touchMoveCallback.bind(this, e) ;
+        this.touch.callbackCancel = this.touchCancelCallback.bind(this, e) ;
+
+        this.touch.timeout = setTimeout(() => {
+            this.removeTouchEventListeners() ;
+            this.displayContextMenu(e) ;
+        }, 1000) ;
+
+        this.canvas.addEventListener("touchend",    this.touch.callbackEnd) ;
+        this.canvas.addEventListener("touchmove",   this.touch.callbackMove) ;
+        this.canvas.addEventListener("touchcancel", this.touch.callbackCancel) ;
     }
 
-    touchEnd() {
-        if(this.dragging.id)
-            this.dragEnd();
+    removeTouchEventListeners() {
+        this.canvas.removeEventListener("touchend",    this.touch.callbackEnd) ;
+        this.canvas.removeEventListener("touchmove",   this.touch.callbackMove) ;
+        this.canvas.removeEventListener("touchcancel", this.touch.callbackCancel) ;
+    }
+
+    touchEndCallback(evt) {
+        clearTimeout(this.touch.timeout) ;
+        this.removeTouchEventListeners() ;
+        this.dragEnd();
+        this.parseInput(evt, true) ;
+    }
+
+    touchMoveCallback(evt) {
+        clearTimeout(this.touch.timeout);
+        this.removeTouchEventListeners() ;
+        let { x, y } = this.getCanvasOffset(evt) ;
+        let i = this.itemAtLocation(x, y) ;
+        if(i !== false) {
+            this.dragStart(i, x, y);
+        }
+    }
+
+    touchCancelCallback() {
+        clearTimeout(this.touch.timeout);
+        this.removeTouchEventListeners() ;
+        this.dragEnd();
     }
 
     displayContextMenu(e) {
-        let absPos = this.getCoordinates(e) ;
+        let absPos = this.getDocumentOffset(e) ;
         let { x, y } = this.getCanvasOffset(e) ;
 
         let menuItems = 0 ;
@@ -888,19 +959,13 @@ class Component {
         let { x, y } = this.getCanvasOffset(e) ;
         if(!this.connecting.isConnecting) return ;
 
-        let io = this.getIO(this.connecting.start) ;
+        let io ;
+        if(this.connecting.connectFrom === "input")
+            io = this.getInput(this.connecting.start) ;
+        else io = this.getOutput(this.connecting.start) ;
 
         this.redrawCanvas() ;
         this.drawer.drawConnection(io.x, io.y, x, y) ;
-    }
-
-    getConnectionsByInput(input) {
-        let resp = [] ;
-        for(let c in this.connections) {
-            if(this.connections[c].input.id === input)
-                resp.push(this.connections[c]) ;
-        }
-        return resp ;
     }
 
     isConnectionToOutput(output) {
@@ -911,42 +976,20 @@ class Component {
         return false ;
     }
 
-    propagateState(input) {
-        let cons = this.getConnectionsByInput(input.id) ;
-        if(!cons.length) return ;
-
-        if(this.propagating.includes(input.id))
-            return ;
-        this.propagating.push(input.id) ;
-
-        for(let c in cons) {
-            cons[c].state = input.state ;
-            cons[c].output.state = input.state ;
-
-            let idParts = cons[c].output.id.split('_') ;
-            if(idParts.length === 3) {
-                let item = this.getItem(idParts[0]) ;
-                item.determineInputState() ;
-                for(let i in item.inputs) {
-                    this.propagateState(item.inputs[i]) ;
-                }
-            }
-        }
-        this.propagating = [] ;
-    }
-
     getCanvasOffset(e) {
-        let x = e.clientX ?? e.touches[0].clientX ;
-        let y = e.clientY ?? e.touches[0].clientY ;
+        let { x, y } = this.getCoordinates(e) ;
         let elemRect = document.getElementById("canvas").getBoundingClientRect();
 
         return { x: x-elemRect.left, y: y-elemRect.top } ;
     }
 
-    getAbsoluteOffset(x, y) {
-        let elemRect = document.getElementById("canvas").getBoundingClientRect();
+    getDocumentOffset(e) {
+        let { x, y } = this.getCoordinates(e) ;
 
-        return { x: x+elemRect.left, y: y+elemRect.top } ;
+        let scrollY = window.scrollY ;
+        let scrollX = window.scrollX ;
+
+        return { x: x+scrollX, y: y+scrollY } ;
     }
 
     getCoordinates(e) {
@@ -1050,8 +1093,14 @@ class Component {
                     ) ;
                     break ;
                 case Component.types.CUSTOM:
+                case Component.types.XOR:
+                case Component.types.NOR:
+                case Component.types.XNOR:
+                case Component.types.NAND:
+                case Component.types.BUF:
                     returnObject.items[i] = new AbstractedComponent(
                         state.items[i].spec,
+                        state.items[i].type,
                         specs[state.items[i].spec],
                         specs,
                         state.items[i].id,
@@ -1109,6 +1158,7 @@ class Component {
 
         this.drawer.clearCanvas() ;
 
+        this.metadata.editing = false ;
         this.items = {} ;
         this.inputs = {} ;
         this.outputs = {} ;
