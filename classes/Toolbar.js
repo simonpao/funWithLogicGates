@@ -15,6 +15,8 @@ class Toolbar {
         this.removeComponentCallback = removeComponentCallback ;
         this.editComponentCallback = editComponentCallback ;
         this.duplicateComponentCallback = duplicateComponentCallback ;
+        this.inFullScreen = false ;
+        this.navDockedRight = false ;
 
         this.loadToolbarState() ;
         this.logger.debug(`color: ${this.color}`) ;
@@ -29,10 +31,12 @@ class Toolbar {
 
     setListeners() {
         this.toolbar = document.getElementById('fun-with-logic-gates--nav') ;
+        this.componentScroll = document.getElementById('components--div') ;
         this.colorInput = document.getElementById('add-item--color-input') ;
         this.addAndBtn = document.getElementById('add-and--button') ;
         this.addOrBtn = document.getElementById('add-or--button') ;
         this.addNotBtn = document.getElementById('add-not--button') ;
+        this.add7SegBtn = document.getElementById('add-seven-seg--button') ;
         this.addInputBtn = document.getElementById('add-input--button') ;
         this.addOutputBtn = document.getElementById('add-output--button') ;
         this.truthBtn = document.getElementById('truth-table--button') ;
@@ -41,10 +45,18 @@ class Toolbar {
         this.toolbar.style.width = `${this.component.metadata.canvas.width-10}px` ;
         this.toolbar.style.maxWidth = `99%` ;
 
+        this.componentScroll.addEventListener("wheel", e => {
+            if(this.navDockedRight && this.inFullScreen) return ;
+            e.preventDefault() ;
+            let delta = e.deltaY || e.deltaX ;
+            this.componentScroll.scrollLeft += delta ;
+        }) ;
+
         this.colorInput.addEventListener("change", this.setColor.bind(this))
         this.addAndBtn.addEventListener("click", this.newAnd.bind(this)) ;
         this.addOrBtn.addEventListener("click", this.newOr.bind(this)) ;
         this.addNotBtn.addEventListener("click", this.newNot.bind(this)) ;
+        this.add7SegBtn.addEventListener("click", this.add7Seg.bind(this)) ;
         this.addInputBtn.addEventListener("click", this.newInput.bind(this)) ;
         this.addOutputBtn.addEventListener("click", this.newOutput.bind(this)) ;
         this.clearBtn.addEventListener("click", this.clearCanvas.bind(this)) ;
@@ -56,18 +68,22 @@ class Toolbar {
     generateToolbar() {
         let nav = document.createElement("nav") ;
         nav.id = 'fun-with-logic-gates--nav' ;
-        nav.innerHTML = `<input id='add-item--color-input' type='color' value='${this.color}'/>` +
+        nav.innerHTML = `<div id="components--div">` +
+            `<input id='add-item--color-input' type='color' value='${this.color}'/>` +
             "<button id='add-and--button'>AND</button>" +
             "<button id='add-or--button'>OR</button>" +
             "<button id='add-not--button'>NOT</button>" +
             "<span id='new-components--span'></span>" +
+            "<button id='add-seven-seg--button'>7SEG</button>" +
+            "</div><div id='other-controls--div'>" +
             "<button id='add-input--button'>Add Input</button>" +
             "<input type='text' maxlength='5' id='add-input--input' placeholder='Input Label' value='IN' onkeyup='this.value = this.value.toUpperCase();'/>" +
             "<button id='add-output--button'>Add Output</button>" +
             "<input type='text' maxlength='5' id='add-output--input' placeholder='Output Label' value='OUT' onkeyup='this.value = this.value.toUpperCase();'/>" +
             "<button id='truth-table--button'>Truth Table</button>" +
             "<button id='clear-state--button'>Clear</button>" +
-            "<button id='save-component--button'>Save</button>" ;
+            "<button id='save-component--button'>Save</button>" +
+            "<button id='full-screen--button'>Full Screen</button></div>" ;
         return nav ;
     }
 
@@ -86,6 +102,7 @@ class Toolbar {
     displayContextMenu(name, e) {
         let { x, y } = this.component.getDocumentOffset(e) ;
         e.preventDefault() ;
+        this.removeContextMenu() ;
 
         let node = document.createElement("menu") ;
         node.id = 'context-menu' ;
@@ -93,7 +110,7 @@ class Toolbar {
             `<li><button data-name="${name}" id="context-menu--duplicate">Duplicate</button></li>` +
             `<li><button data-name="${name}" id="context-menu--delete">Delete</button></li>` ;
 
-        this.component.placeholder.innerHTML = node.outerHTML ;
+        this.component.placeholder.appendChild(node) ;
 
         let removeComponent = document.getElementById('context-menu--delete') ;
         removeComponent.addEventListener("click", this.removeComponent.bind(this)) ;
@@ -105,7 +122,7 @@ class Toolbar {
         editComponent.addEventListener("click", this.editComponent.bind(this)) ;
 
         let menu = document.getElementById('context-menu') ;
-        menu.style.top = `${y+15}px` ;
+        menu.style.top = `${y-30-menu.clientHeight}px` ;
         menu.style.left = `${x-55}px` ;
     }
 
@@ -170,6 +187,10 @@ class Toolbar {
         this.component.newItem(Component.types.NOT) ;
     }
 
+    add7Seg() {
+        this.component.newItem(Component.types.SEVENSEG) ;
+    }
+
     newCustom(name, componentSpec) {
         let type = AbstractedComponent.determineType(name, componentSpec)
         this.component.newItem(type, name, componentSpec) ;
@@ -203,7 +224,8 @@ class Toolbar {
 
     updateToolbarState() {
         this.storage.setObject({
-            color: this.color
+            color: this.color,
+            navDockedRight: this.navDockedRight
         }) ;
     }
 
@@ -211,6 +233,7 @@ class Toolbar {
         let state = this.storage.getObject() ;
         this.color = typeof state.color === "undefined" ? Component.startColor : state.color ;
         this.component.color = this.color ;
+        this.navDockedRight = typeof state.navDockedRight === "undefined" ? false : state.navDockedRight ;
     }
 
     resetToolbar() {

@@ -434,6 +434,95 @@ class Drawer {
         this.canvas2dCtx.fillText(name, (x+w/2)-(name.length*4), y+15);
     }
 
+    fillSevenSegment(x, y, state) {
+        const w = 100, h = 110, s = 7 ;
+        const black = "#333333", red = "#ff1111", gray = "#aeaeae" ;
+
+        this.canvas2dCtx.fillStyle = black;
+        this.canvas2dCtx.fillRect(x+10, y, w-10, h);
+
+        // Top bar A
+        this.canvas2dCtx.strokeStyle = state[0] ? red : gray;
+        this.canvas2dCtx.lineWidth = s ;
+        this.canvas2dCtx.beginPath();
+        this.canvas2dCtx.moveTo(x+40, y+10) ;
+        this.canvas2dCtx.lineTo(x+w-10, y+10) ;
+        this.canvas2dCtx.stroke() ;
+
+        // Top right line B
+        this.canvas2dCtx.strokeStyle = state[1] ? red : gray;
+        this.canvas2dCtx.lineWidth = s ;
+        this.canvas2dCtx.beginPath();
+        this.canvas2dCtx.moveTo(x+w-10, y+15) ;
+        this.canvas2dCtx.lineTo(x+w-15, y+(h/2)-5) ;
+        this.canvas2dCtx.stroke() ;
+
+        // Bottom right line C
+        this.canvas2dCtx.strokeStyle = state[2] ? red : gray;
+        this.canvas2dCtx.lineWidth = s ;
+        this.canvas2dCtx.beginPath();
+        this.canvas2dCtx.moveTo(x+w-15, y+(h/2)+5) ;
+        this.canvas2dCtx.lineTo(x+w-20, y+h-15) ;
+        this.canvas2dCtx.stroke() ;
+
+        // Bottom bar D
+        this.canvas2dCtx.strokeStyle = state[3] ? red : gray;
+        this.canvas2dCtx.lineWidth = s ;
+        this.canvas2dCtx.beginPath();
+        this.canvas2dCtx.moveTo(x+30, y+h-10) ;
+        this.canvas2dCtx.lineTo(x+w-20, y+h-10) ;
+        this.canvas2dCtx.stroke() ;
+
+        // Bottom left line E
+        this.canvas2dCtx.strokeStyle = state[4] ? red : gray;
+        this.canvas2dCtx.lineWidth = s ;
+        this.canvas2dCtx.beginPath();
+        this.canvas2dCtx.moveTo(x+35, y+(h/2)+5) ;
+        this.canvas2dCtx.lineTo(x+30, y+h-15) ;
+        this.canvas2dCtx.stroke() ;
+
+        // Top left line F
+        this.canvas2dCtx.strokeStyle = state[5] ? red : gray;
+        this.canvas2dCtx.lineWidth = s ;
+        this.canvas2dCtx.beginPath();
+        this.canvas2dCtx.moveTo(x+40, y+15) ;
+        this.canvas2dCtx.lineTo(x+35, y+(h/2)-5) ;
+        this.canvas2dCtx.stroke() ;
+
+        // Middle bar G
+        this.canvas2dCtx.strokeStyle = state[6] ? red : gray;
+        this.canvas2dCtx.lineWidth = s ;
+        this.canvas2dCtx.beginPath();
+        this.canvas2dCtx.moveTo(x+35, y+(h/2)) ;
+        this.canvas2dCtx.lineTo(x+w-15, y+(h/2)) ;
+        this.canvas2dCtx.stroke() ;
+
+        // Decimal Point DP
+        this.canvas2dCtx.fillStyle = state[7] ? red : gray;
+        this.canvas2dCtx.beginPath() ;
+        this.canvas2dCtx.arc((x+w)-10, y+h-10, 5, 0, Math.PI * 2, false) ;
+        this.canvas2dCtx.fill();
+
+        // Inputs
+        let ids = ["DP", "A", "B", "C", "D", "E", "F", "G"] ;
+        let marginY = h/(ids.length+1) ;
+        for(let i = 0; i < ids.length; i++) {
+            let posY = y+(marginY*(i+1)) ;
+            this.canvas2dCtx.strokeStyle = black;
+            this.canvas2dCtx.lineWidth = 5 ;
+            this.canvas2dCtx.beginPath();
+            this.canvas2dCtx.moveTo(x, posY) ;
+            this.canvas2dCtx.lineTo(x+10, posY) ;
+            this.canvas2dCtx.stroke() ;
+
+            let label = ids[i] ;
+            this.canvas2dCtx.font = "14px Monospace";
+            this.canvas2dCtx.fillStyle = "white";
+            this.canvas2dCtx.fillText(label, x+13, posY+3);
+        }
+
+    }
+
     fillInputs(inputs) {
         let number = Object.keys(inputs).length ;
         this.clearInputs() ;
@@ -457,6 +546,13 @@ class Drawer {
             inputs[i].y = spacer*c ;
             c++ ;
         }
+    }
+
+    test(x,y) {
+        this.canvas2dCtx.fillStyle = "red";
+        this.canvas2dCtx.beginPath() ;
+        this.canvas2dCtx.arc(x, y, 5, 0, Math.PI * 2, false) ;
+        this.canvas2dCtx.fill();
     }
 
     clearInputs() {
