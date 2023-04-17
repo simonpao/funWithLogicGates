@@ -12,6 +12,7 @@ class ToastMessage {
         this.offset = ToastMessage.offsetTop ;
         this.top = `${ToastMessage.offsetTop}px` ;
         this.index = 0 ;
+        this.placeholder = document.getElementById('new-items-placeholder') ;
 
         let otherToasts = document.querySelectorAll(".toast-message--span") ;
         if(otherToasts.length) {
@@ -35,7 +36,7 @@ class ToastMessage {
         toast.dataset.index = this.index ;
         toast.style.top = this.top ;
         toast.innerHTML = `${this.message}<span class="toast-message-close--span">&#10006;</span>` ;
-        document.body.appendChild(toast) ;
+        this.placeholder.appendChild(toast) ;
 
         let timeout ;
         if(this.delay) {
@@ -55,7 +56,7 @@ class ToastMessage {
         toast.style.top = this.top ;
         toast.innerHTML = `${this.message}<span class="toast-message-close--span">` +
             `<button class="toast-message-yes--button">${yes}</button><button class="toast-message-no--button">${no}</button></span>` ;
-        document.body.appendChild(toast) ;
+        this.placeholder.appendChild(toast) ;
 
         return new Promise((resolve) => {
             let yes = document.querySelector(`#${this.id} .toast-message-yes--button`) ;
@@ -88,7 +89,7 @@ class ToastMessage {
             if(!element) return ;
             let elemOffsetTop = element.offsetTop ;
             let elemOffsetHeight = element.offsetHeight ;
-            document.body.removeChild(element) ;
+            this.placeholder.removeChild(element) ;
             document.querySelectorAll(".toast-message--span").forEach((node) => {
                 if(elemOffsetTop < node.offsetTop)
                     node.style.top = `${node.offsetTop-elemOffsetHeight-ToastMessage.offsetToast}px` ;

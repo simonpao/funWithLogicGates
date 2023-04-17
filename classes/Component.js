@@ -9,7 +9,8 @@ class Component extends ComponentInterface {
         NOR: 0x06,
         XNOR: 0x07,
         NAND: 0x08,
-        BUF: 0x09
+        BUF: 0x09,
+        SEVENSEG: 0x0a
     } ;
 
     static startColor = "#0099FF" ;
@@ -112,26 +113,32 @@ class Component extends ComponentInterface {
             }
         }
 
-        this.placeholder.innerHTML = '<div id="canvas-mask--div"></div>' ;
-        this.computeTruthTable(inIds, numIn, outIds, numOut, combinations).then((html) => {
-            this.placeholder.innerHTML = html ;
+        let mask = document.createElement("div") ;
+        mask.id = "canvas-mask--div" ;
+        this.placeholder.appendChild(mask) ;
+        this.computeTruthTable(inIds, numIn, outIds, numOut, combinations).then((truthTable) => {
+            this.placeholder.appendChild(truthTable) ;
             document.getElementById("truth-table-close--button").addEventListener("click", () => {
-                this.placeholder.innerHTML = "" ;
+                this.placeholder.removeChild(mask) ;
+                this.placeholder.removeChild(truthTable) ;
             }) ;
         }) ;
     }
 
     computeTruthTable(inIds, numIn, outIds, numOut, combinations) {
         return new Promise((resolve) => {
-            let html = "<div id='canvas-mask--div'></div><div id='truth-table--div'><div class='truth-table-scroll--div'><table><thead><tr>" ;
-            let header = ""
+            let truthTable = document.createElement("div") ;
+            truthTable.id = 'truth-table--div' ;
+            let html = "<div class='truth-table-scroll--div'><table><thead><tr>" ;
+            let header = "" ;
+
             for(let i in inIds) {
                 html += `<th class="truth-table-in--th">${this.inputs[inIds[i]].label}</th>` ;
-                header += ` | ${inIds[i]}` ;
+                header += ` | ${this.inputs[inIds[i]].label}` ;
             }
             for(let i in outIds) {
                 html += `<th class="truth-table-out--th">${this.outputs[outIds[i]].label}</th>` ;
-                header += ` | ${outIds[i]}` ;
+                header += ` | ${this.outputs[outIds[i]].label}` ;
             }
             html += "</tr></thead><tbody>" ;
             header += " |" ;
@@ -147,7 +154,7 @@ class Component extends ComponentInterface {
                 let c = 0 ;
                 for(let n of binary) {
                     html += `<td class="truth-table-in--td">${n}</td>` ;
-                    row += ` | ${n.padStart(inIds[c].length)}` ;
+                    row += ` | ${n.padStart(this.inputs[inIds[c]].label.length)}` ;
                     this.inputs[inIds[c]].state = parseInt(n) ;
                     this.propagateState(this.inputs[inIds[c]]) ;
                     c ++ ;
@@ -155,7 +162,7 @@ class Component extends ComponentInterface {
 
                 for(let n = 0; n < numOut; n++) {
                     html += `<td class="truth-table-out--td">${this.outputs[outIds[n]].state}</td>` ;
-                    row += ` | ${(this.outputs[outIds[n]].state).toString().padStart(outIds[n].length)}` ;
+                    row += ` | ${(this.outputs[outIds[n]].state).toString().padStart(this.outputs[outIds[n]].label.length)}` ;
                 }
                 row += " |" ;
                 html += "</tr>" ;
@@ -165,7 +172,8 @@ class Component extends ComponentInterface {
             }
             this.logger.info(" ".padEnd(header.length, "-")) ;
             html += "</tbody></table></div><button id='truth-table-close--button'>Close</button></div>" ;
-            resolve(html) ;
+            truthTable.innerHTML = html ;
+            resolve(truthTable) ;
         }) ;
     }
 
@@ -177,6 +185,11 @@ class Component extends ComponentInterface {
         if(type === Component.types.CUSTOM) {
             dim.w = 120 ;
             dim.h = ((Math.max(Object.keys(componentSpec.inputs).length, Object.keys(componentSpec.outputs).length)*(dim.h/2)))+10 ;
+        }
+
+        if(type === Component.types.SEVENSEG) {
+            dim.w = 100;
+            dim.h = 110;
         }
 
         while(this.itemAtLocation(loc.x, loc.y) ||
@@ -216,6 +229,10 @@ class Component extends ComponentInterface {
             case Component.types.BUF:
                 this.indices.items.index = this.getNextAvailableIndex(name, this.indices.items.index) ;
                 this.addCustom(name, type, componentSpec, this.indices.items.index, loc.x, loc.y, dim.w, dim.h, color) ;
+                break ;
+            case Component.types.SEVENSEG:
+                this.indices.items.index = this.getNextAvailableIndex('7seg', this.indices.items.index) ;
+                this.add7SegmentDisplay('7seg'+this.indices.items.index, loc.x, loc.y) ;
                 break ;
         }
 
@@ -276,6 +293,17 @@ class Component extends ComponentInterface {
         this.items[id] = new Not(id, x, y, w, h, color) ;
 
         this.drawer.fillNot(x, y, w, h, color);
+    }
+
+    add7SegmentDisplay(id, x, y) {
+        if(this.itemExists(id)) {
+            this.logger.error(`ID ${id} already exists.`);
+            return ;
+        }
+
+        this.items[id] = new SevenSegmentDisplay(id, x, y, 100, 110) ;
+
+        this.drawer.fillSevenSegment(x, y, this.items[id].state);
     }
 
     addCustom(name, type, componentSpec, index, x, y, w, h, color) {
@@ -357,6 +385,9 @@ class Component extends ComponentInterface {
                 break ;
             case Component.types.BUF:
                 this.drawer.fillBuffer(item.x, item.y, item.w, item.h, item.color);
+                break ;
+            case Component.types.SEVENSEG:
+                this.drawer.fillSevenSegment(item.x, item.y, item.state);
                 break ;
         }
     }
@@ -510,7 +541,6 @@ class Component extends ComponentInterface {
 
     parseInput(e, touch = false) {
         let { x, y } = this.getCanvasOffset(e) ;
-        this.logger.debug(`${x}, ${y}`) ;
 
         if(this.connecting.isConnecting) {
             this.endIOConnect(x, y) ;
@@ -624,7 +654,9 @@ class Component extends ComponentInterface {
         let { x, y } = this.getCanvasOffset(e) ;
 
         let menuItems = 0 ;
-        let html = "<menu id='context-menu'>" ;
+        let menu = document.createElement("menu") ;
+        menu.id = 'context-menu' ;
+        let html = "" ;
 
         let something = this.somethingAtLocation(x,y) ;
 
@@ -657,10 +689,10 @@ class Component extends ComponentInterface {
             html += `<li><button data-id="${something.value.id}" data-type="output" id="context-menu--remove">Remove</button></li>` ;
         }
 
-        html += "</menu>" ;
+        menu.innerHTML = html ;
         if(menuItems) {
             e.preventDefault() ;
-            this.placeholder.innerHTML += html ;
+            this.placeholder.appendChild(menu) ;
 
             let paint = document.getElementById('context-menu--paint') ;
             if(paint) paint.addEventListener("click", this.contextMenuItemPaint.bind(this)) ;
@@ -677,7 +709,6 @@ class Component extends ComponentInterface {
             let connect = document.getElementById('context-menu--connect') ;
             if(connect) connect.addEventListener("click", this.contextMenuIOConnect.bind(this)) ;
 
-            let menu = document.getElementById('context-menu') ;
             menu.style.top = `${absPos.y}px` ;
             menu.style.left = `${absPos.x-55}px` ;
         }
@@ -743,10 +774,17 @@ class Component extends ComponentInterface {
     }
 
     renamePrompt(io) {
-        this.placeholder.innerHTML = `<div id="canvas-mask--div"></div><div id='io-rename--div'><span class="io-rename-close--span">&#10006;</span><div>`+
+        let mask = document.createElement("div") ;
+        let ioRename = document.createElement("div") ;
+        mask.id = "canvas-mask--div" ;
+        ioRename.id = "io-rename--div" ;
+
+        ioRename.innerHTML = `<span class="io-rename-close--span">&#10006;</span><div>`+
             `<input type="text" maxlength="5" id="io-rename--input" placeholder="New Label" value="${io.label}">`+
-            `<button id="io-rename--button">Rename</button>` +
-            `</div></div>` ;
+            `<button id="io-rename--button">Rename</button></div>` ;
+
+        this.placeholder.appendChild(mask) ;
+        this.placeholder.appendChild(ioRename) ;
 
         return new Promise((resolve) => {
             let rename = document.querySelector(`#io-rename--div #io-rename--button`) ;
@@ -768,11 +806,13 @@ class Component extends ComponentInterface {
                     return ;
                 }
 
-                this.placeholder.innerHTML = "" ;
+                this.placeholder.removeChild(mask) ;
+                this.placeholder.removeChild(ioRename) ;
                 resolve(newLabel) ;
             }) ;
             close.addEventListener("click", () => {
-                this.placeholder.innerHTML = "" ;
+                this.placeholder.removeChild(mask) ;
+                this.placeholder.removeChild(ioRename) ;
                 resolve(false) ;
             }) ;
         }) ;
@@ -781,30 +821,35 @@ class Component extends ComponentInterface {
     removeConnections(id, type) {
         switch(type) {
             case "item":
-                for(let i in this.getItem(id).inputs) {
-                    let input = this.getItem(id).inputs[i].id ;
+                let item = this.getItem(id) ;
+                for(let i in item.inputs) {
+                    let input = item.inputs[i] ;
+                    input.state = 0 ;
                     for(let c = 0; c < this.connections.length; c++) {
-                        if(this.connections[c].input.id === input) {
+                        if(this.connections[c].input.id === input.id) {
                             this.connections.splice(c, 1);
                             this.indices.connections.index -- ;
                             c -- ;
                         }
                     }
                 }
-                for(let o in this.getItem(id).outputs) {
-                    let output = this.getItem(id).outputs[o].id ;
+                for(let o in item.outputs) {
+                    let output = item.outputs[o] ;
+                    output.state = 0 ;
                     for(let c = 0; c < this.connections.length; c++) {
-                        if(this.connections[c].output.id === output) {
+                        if(this.connections[c].output.id === output.id) {
                             this.connections.splice(c, 1);
                             this.indices.connections.index -- ;
                             c -- ;
                         }
                     }
                 }
+                item.determineInputState() ;
                 break ;
             case "input":
                 for(let c = 0; c < this.connections.length; c++) {
                     if(this.connections[c].input.id === id) {
+                        this.connections[c].output.state = 0 ;
                         this.connections.splice(c, 1);
                         this.indices.connections.index -- ;
                         c -- ;
@@ -979,8 +1024,17 @@ class Component extends ComponentInterface {
     getCanvasOffset(e) {
         let { x, y } = this.getCoordinates(e) ;
         let elemRect = document.getElementById("canvas").getBoundingClientRect();
+        let left = elemRect.left, top = elemRect.top ;
 
-        return { x: x-elemRect.left, y: y-elemRect.top } ;
+        let ratio = 1 ;
+        if(this.metadata.canvas.width > elemRect.width) {
+            ratio = elemRect.width / this.metadata.canvas.width ;
+        }
+
+        x = (x-left)/ratio ;
+        y = (y-top)/ratio ;
+        this.logger.debug(`getCanvasOffset(e): x: ${x}, y: ${y}, ratio: ${ratio}`) ;
+        return { x: x, y: y } ;
     }
 
     getDocumentOffset(e) {
@@ -1090,6 +1144,16 @@ class Component extends ComponentInterface {
                         state.items[i].w,
                         state.items[i].h,
                         state.items[i].color
+                    ) ;
+                    break ;
+                case Component.types.SEVENSEG:
+                    returnObject.items[i] = new SevenSegmentDisplay(
+                        state.items[i].id,
+                        state.items[i].x,
+                        state.items[i].y,
+                        state.items[i].w,
+                        state.items[i].h,
+                        state.items[i].state
                     ) ;
                     break ;
                 case Component.types.CUSTOM:
