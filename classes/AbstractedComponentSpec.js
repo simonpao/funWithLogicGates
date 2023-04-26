@@ -1,6 +1,8 @@
 class AbstractedComponentSpec extends ComponentInterface {
-    constructor(component) {
+    constructor(component, name) {
         super();
+
+        this.name = name ;
 
         this.items = component.items ;
         this.inputs = component.inputs ;

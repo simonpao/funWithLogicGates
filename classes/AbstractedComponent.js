@@ -3,7 +3,7 @@ class AbstractedComponent extends Item {
         super(type, id, x, y, w, h, color, spec.numberOfOutputs, spec.numberOfInputs) ;
 
         this.spec = new AbstractedComponentSpec(
-            AbstractedComponentSpec.copyNewComponentSpec(spec, specs)
+            AbstractedComponentSpec.copyNewComponentSpec(spec, specs), name
         ) ;
         this.name = name ;
 

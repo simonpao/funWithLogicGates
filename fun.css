@@ -27,13 +27,22 @@
 .fun-with-logic-gates--canvas {
     flex: 0 0 auto ;
     border:1px solid black;
-    max-width: 100vw;
+    max-width: 99%;
     max-height: 100vh;
     cursor: grab;
     user-select: none;
 }
 
+#canvas-container--div.full-screen .fun-with-logic-gates--canvas {
+    max-height: 75vh;
+    margin-bottom: 25vh;
+    max-width: 99%;
+    margin-right: unset;
+}
+
 #canvas-container--div.full-screen .fun-with-logic-gates--canvas.nav-right-side {
+    max-height: 100vh;
+    margin-bottom: unset;
     max-width: 85vw;
     margin-right: 15vw;
 }
@@ -47,8 +56,26 @@
     user-select: none;
 }
 
+#context-menu.touch-menu {
+    position: fixed;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    top: 5vh;
+    bottom: 5vh;
+    left: 5vw;
+    right: 5vw;
+    z-index: 1001;
+    overflow-y: auto ;
+}
+
 #context-menu li {
     list-style: none;
+}
+
+#context-menu.touch-menu li {
+    display: flex;
+    flex: 1 1 50%;
 }
 
 #context-menu li button {
@@ -61,6 +88,14 @@
     cursor: pointer;
     width: 100px;
     text-align: center;
+}
+
+#context-menu.touch-menu li button {
+    width: 100%;
+    flex: 1 1 auto;
+    border: 1px solid var(--context-menu-text-color);
+    margin: -1px 0 0 -1px;
+    min-height: 65px;
 }
 
 #context-menu li button:hover {
@@ -79,6 +114,7 @@
     z-index: 1000;
 }
 
+#look-up-table--div,
 #save-component--div,
 #io-rename--div {
     display: flex;
@@ -94,6 +130,12 @@
     z-index: 1001;
 }
 
+#look-up-table--div {
+    top: 10vh;
+    bottom: 10vh;
+}
+
+#look-up-table--div .look-up-table-close--span,
 #save-component--div .save-component-close--span,
 #io-rename--div .io-rename-close--span {
     position: absolute;
@@ -156,10 +198,13 @@
     border-bottom: 2px solid var(--border-color);
 }
 
+#look-up-table--div #look-up-table--button,
 #save-component--div #save-component--button,
 #io-rename--div #io-rename--button,
 .toast-message--span button,
 #truth-table-close--button,
+#look-up-table--div .look-up-table--input,
+#look-up-table--div .look-up-table--select,
 #save-component--div #save-component--input,
 #io-rename--div #io-rename--input,
 #fun-with-logic-gates--nav input[type="text"],
@@ -172,12 +217,14 @@
     margin: 0 5px 5px 0;
 }
 
+#look-up-table--div .look-up-table--input::placeholder,
 #save-component--div #save-component--input::placeholder,
 #io-rename--div #io-rename--input::placeholder,
 #fun-with-logic-gates--nav input[type="text"]::placeholder {
     color: var(--button-text-color) ;
 }
 
+#look-up-table--div .look-up-table--input,
 #save-component--div #save-component--input,
 #io-rename--div #io-rename--input,
 #fun-with-logic-gates--nav input[type="text"] {
@@ -185,6 +232,9 @@
     cursor: text;
 }
 
+#look-up-table--div .look-up-table--input {
+    width: 75px;
+}
 #save-component--div #save-component--input {
     width: 200px;
 }
@@ -302,17 +352,29 @@
     z-index: 1001;
 }
 
+#look-up-table--div > div {
+    display: block;
+    margin: auto;
+    width:90%;
+    height:100%;
+}
+
+#look-up-table--div #look-up-table-scroll--div,
 #truth-table--div .truth-table-scroll--div {
     height: 84%;
     overflow: auto;
     border-bottom: 1px solid black;
+    margin-bottom: 10px;
 }
 
+#look-up-table--div table,
 #truth-table--div table {
     border-collapse: collapse;
     margin: 5px auto;
 }
 
+#look-up-table--div th,
+#look-up-table--div td,
 #truth-table--div .truth-table-in--th,
 #truth-table--div .truth-table-out--th,
 #truth-table--div .truth-table-in--td,
@@ -321,11 +383,14 @@
     padding: 5px ;
 }
 
+#look-up-table--div td[contenteditable="true"],
 #truth-table--div .truth-table-in--th,
 #truth-table--div .truth-table-in--td {
     background-color: white;
 }
 
+#look-up-table--div th,
+#look-up-table--div td,
 #truth-table--div .truth-table-out--th,
 #truth-table--div .truth-table-out--td {
     background-color: lightgray;
@@ -433,18 +498,34 @@
     cursor: pointer;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 950px) {
     .toast-message--span {
         left: 2vw;
         right: 2vw;
     }
 
+    #truth-table--div,
+    #look-up-table--div,
     #save-component--div,
     #io-rename--div {
         top: 10vh;
         bottom: 10vh;
         left: 10vw;
         right: 10vw;
+    }
+}
+
+@media (max-width: 500px) {
+    #context-menu.touch-menu {
+        flex-wrap: wrap;
+    }
+
+    #context-menu.touch-menu li {
+        flex: 1 1 100%;
+    }
+
+    #context-menu.touch-menu li button {
+        border-bottom: 1px solid var(--context-menu-text-color);
     }
 }
 

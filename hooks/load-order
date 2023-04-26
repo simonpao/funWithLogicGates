@@ -5,6 +5,7 @@ classes/And.js
 classes/Not.js
 classes/Or.js
 classes/Rectangle.js
+classes/ReadOnlyMemory.js
 classes/SevenSegmentDisplay.js
 classes/Connection.js
 classes/Drawer.js
