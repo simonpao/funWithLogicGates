@@ -7,8 +7,9 @@ class IO {
         this.y = 0 ;
     }
 
-    isAtCoordinates(x, y) {
+    isAtCoordinates(x, y, touch = false) {
         let r = Drawer.dim.io.r ;
+        if(touch) r += 10 ;
 
         return (this.x > x - r && this.x < x + r) &&
             (this.y > y - r && this.y < y + r);

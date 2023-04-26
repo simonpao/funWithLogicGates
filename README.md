@@ -27,7 +27,7 @@ block for even bigger circuits. This can save time and effort when designing com
 circuits, as you can reuse circuits that you have already created rather than starting 
 from scratch every time.
 
-## Controls
+## Keyboard/Mouse Controls
 
 - Use the buttons below the work area to create new inputs, outputs, and gates 
 - Right-click on items in the work area to reveal a context menu
@@ -38,6 +38,19 @@ from scratch every time.
 - If satisfied with the circuit, click "Save" to abstract the circuit into it's own named component
   - This will place a new button in the toolbar which can be clicked to add the new component to the work area
   - Right-click on component buttons to edit or delete created components
+
+## Touch Controls
+
+- Use the buttons below the work area to create new inputs, outputs, and gates
+  - Full screen mode is recommended for small screens
+  - The buttons can be docked below or to the right of the work area in full screen mode
+- Long press on items in the work area to reveal a context menu
+- Tap on inputs, outputs, gates / components to reveal a context menu
+  - If trying to establish a connection, tap on the component to which you want to connect 
+- Once connections are complete, tap on the "Truth Table" button to generate a table showing how all combinations of inputs affect the output(s)
+- If satisfied with the circuit, tap "Save" to abstract the circuit into it's own named component
+  - This will place a new button in the toolbar which can be tapped to add the new component to the work area
+  - Long press on component buttons to edit or delete created components
 
 ## Usage
 

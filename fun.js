@@ -58,7 +58,7 @@ class FunWithLogicGates {
             if(this.currentComponent.metadata.editing && componentName !== this.currentComponent.metadata.editing)
                 delete this.components[this.currentComponent.metadata.editing] ;
             this.currentComponent.metadata.editing = false ;
-            this.components[componentName] = new AbstractedComponentSpec(this.currentComponent) ;
+            this.components[componentName] = new AbstractedComponentSpec(this.currentComponent, componentName) ;
             this.toolbar.addNewComponent(componentName, this.components[componentName]) ;
             this.currentComponent.clearCanvasState() ;
             this.updateState() ;
@@ -222,7 +222,7 @@ class FunWithLogicGates {
         for(let i in state.components) {
             this.logger.debug(`Loading component ${i}`) ;
             this.components[i] = new AbstractedComponentSpec(
-                new Component(null, null, this.components, state.components[i])
+                new Component(null, null, this.components, state.components[i]), i
             )
         }
     }
