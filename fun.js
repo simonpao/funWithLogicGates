@@ -6,16 +6,48 @@ class FunWithLogicGates {
         this.logger = new Logger(logLvl, "FunWithLogicGates") ;
         this.storage = new Storage('state') ;
         this.inFullScreen = false ;
+        this.activeSession = false ;
+        this.savesList = {} ;
+        this.currentSave = "" ;
 
         // Move the canvas into a parent wrapper div
-        let canvas = document.getElementById(id) ;
-        let parent = canvas.parentNode ;
+        this.canvas = document.getElementById(id) ;
+        let parent = this.canvas.parentNode ;
         this.canvasContainer = document.createElement("div") ;
         this.canvasContainer.id = 'canvas-container--div' ;
-        parent.replaceChild(this.canvasContainer, canvas) ;
-        this.canvasContainer.appendChild(canvas);
+        parent.replaceChild(this.canvasContainer, this.canvas) ;
+        this.canvasContainer.appendChild(this.canvas);
+        this.canvas.tabIndex = 1 ;
+        this.canvas.classList.add("fun-with-logic-gates--canvas") ;
+
+        this.placeholder = document.createElement("div") ;
+        this.placeholder.id = 'new-items-placeholder' ;
+        this.canvas.after(this.placeholder) ;
 
         this.loadState() ;
+        if(Object.keys(this.components).length) {
+            this.activeSession = true ;
+            this.updateState() ;
+        }
+
+        this.mainMenu = new MainMenu(this.canvas, this.activeSession, logLvl, {
+            startFn: this.initCanvas.bind(this, id, logLvl),
+            newFn: this.startNew.bind(this),
+            saveFn: this.saveGame.bind(this),
+            loadFn: this.loadGame.bind(this)
+        }) ;
+
+        if(!this.activeSession) {
+            this.logger.debug(`Initializing main menu on element '#${id}'`) ;
+            this.mainMenu.renderMainMenu(this.activeSession, this.savesList) ;
+        } else {
+            this.initCanvas(id, logLvl) ;
+        }
+    }
+
+    initCanvas(id, logLvl) {
+        this.activeSession = true ;
+        this.updateState() ;
 
         this.logger.debug(`Initializing canvas on element '#${id}'`) ;
         this.currentComponent = new Component(
@@ -25,6 +57,7 @@ class FunWithLogicGates {
             null,
             this.removeComponentCallback.bind(this)
         ) ;
+
         this.logger.debug(`Initializing toolbar below element '#${id}'`) ;
         this.toolbar = new Toolbar(
             this.currentComponent,
@@ -44,6 +77,21 @@ class FunWithLogicGates {
 
         this.fullScreenBtn = document.getElementById("full-screen--button") ;
         this.fullScreenBtn.addEventListener("click", this.enterFullScreen.bind(this)) ;
+
+        this.mainMenuBtn = document.getElementById("main-menu--button") ;
+        this.mainMenuBtn.addEventListener("click", this.displayMainMenu.bind(this)) ;
+    }
+
+    displayMainMenu() {
+        this.logger.debug(`Initializing main menu`) ;
+        this.currentComponent.items = {} ;
+        this.currentComponent.inputs = {} ;
+        this.currentComponent.outputs = {} ;
+        this.currentComponent.connections = [] ;
+
+        this.currentComponent.removeEventListeners() ;
+        this.toolbar.toolbar.remove() ;
+        this.mainMenu.renderMainMenu(this.activeSession, this.savesList, this.currentSave) ;
     }
 
     async saveComponent() {
@@ -210,14 +258,59 @@ class FunWithLogicGates {
         return false ;
     }
 
+    saveGame(name) {
+        name = name.toLowerCase() ;
+        let lastUpdated = localStorage.getItem('fun-with-logic-gates--last-updated') ;
+        this.savesList[name] = { lastUpdated: lastUpdated, numberOfComponents: Object.keys(this.components).length } ;
+        this.storage.setObject({
+            "canvas-state": this.currentComponent.storage.getObject(),
+            "toolbar-state": this.toolbar.storage.getObject(),
+            "state": this.storage.getObject(),
+            "last-updated": lastUpdated
+        }, "save-" + name) ;
+
+        // Dispatch a save event so other applications can handle save data if they wish
+        this.logger.debug("dispatching save event") ;
+        let saveEvt = new Event("saveGame") ;
+        saveEvt.saveName = name ;
+        saveEvt.saveId = "fun-with-logic-gates--state--save-" + name ;
+        saveEvt.lastUpdated = this.savesList[name].lastUpdated ;
+        saveEvt.numberOfComponents = this.savesList[name].numberOfComponents ;
+        this.canvas.dispatchEvent(saveEvt) ;
+
+        this.updateState() ;
+    }
+
+    loadGame(name) {
+        let state = this.storage.getObject("save-" + name) ;
+        if(Object.keys(state).length === 0) {
+            new ToastMessage("Failed to load save", ToastMessage.ERROR).show() ;
+            return false;
+        }
+
+        this.currentSave = name ;
+        state["state"].savesList = this.savesList ;
+        this.storage.setObject(state["state"]) ;
+        this.currentComponent.storage.setObject(state["canvas-state"]) ;
+        this.toolbar.storage.setObject(state["toolbar-state"]) ;
+
+        this.components = {} ;
+        this.loadState() ;
+        return true ;
+    }
+
     updateState() {
         this.storage.setObject({
+            activeSession: this.activeSession,
+            savesList: this.savesList,
             components: this.components
         }) ;
     }
 
     loadState() {
         let state = this.storage.getObject() ;
+        this.activeSession = state.activeSession ;
+        this.savesList = typeof state.savesList === "undefined" ? {} : state.savesList ;
 
         for(let i in state.components) {
             this.logger.debug(`Loading component ${i}`) ;
@@ -250,6 +343,10 @@ class FunWithLogicGates {
         if(!await new ToastMessage("Are you sure you want to clear EVERYTHING?").confirm())
             return ;
 
+        this.#actuallyClearAllState() ;
+    }
+
+    startNew() {
         this.#actuallyClearAllState() ;
     }
 

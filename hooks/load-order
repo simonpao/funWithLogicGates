@@ -1,3 +1,4 @@
+classes/Coordinates.js
 classes/Item.js
 classes/IO.js
 classes/ComponentInterface.js
@@ -15,6 +16,8 @@ classes/Storage.js
 classes/Component.js
 classes/AbstractedComponentSpec.js
 classes/AbstractedComponent.js
+classes/MainMenu.js
+classes/Button.js
 classes/Logger.js
 classes/Toolbar.js
 classes/ToastMessage.js

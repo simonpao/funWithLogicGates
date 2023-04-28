@@ -17,6 +17,7 @@ class Toolbar {
         this.duplicateComponentCallback = duplicateComponentCallback ;
         this.inFullScreen = false ;
         this.navDockedRight = false ;
+        this.listeners = {} ;
 
         this.loadToolbarState() ;
         this.logger.debug(`color: ${this.color}`) ;
@@ -51,7 +52,7 @@ class Toolbar {
             e.preventDefault() ;
             let delta = e.deltaY || e.deltaX ;
             this.componentScroll.scrollLeft += delta ;
-        }) ;
+        }, { passive: false }) ;
 
         this.colorInput.addEventListener("change", this.setColor.bind(this))
         this.addAndBtn.addEventListener("click", this.newAnd.bind(this)) ;
@@ -63,8 +64,6 @@ class Toolbar {
         this.addOutputBtn.addEventListener("click", this.newOutput.bind(this)) ;
         this.clearBtn.addEventListener("click", this.clearCanvas.bind(this)) ;
         this.truthBtn.addEventListener("click", this.genTruthTable.bind(this)) ;
-
-        document.addEventListener("click", this.removeContextMenu.bind(this)) ;
     }
 
     generateToolbar() {
@@ -79,6 +78,7 @@ class Toolbar {
             "<button id='add-seven-seg--button'>7SEG</button>" +
             "<span id='new-components--span'></span>" +
             "</div><div id='other-controls--div'>" +
+            "<button id='main-menu--button'>Menu</button>" +
             "<button id='add-input--button'>Add Input</button>" +
             "<input type='text' maxlength='5' id='add-input--input' placeholder='Input Label' value='IN' onkeyup='this.value = this.value.toUpperCase();'/>" +
             "<button id='add-output--button'>Add Output</button>" +
@@ -130,8 +130,11 @@ class Toolbar {
         let editComponent = document.getElementById('context-menu--edit') ;
         editComponent.addEventListener("click", this.editComponent.bind(this)) ;
 
+        this.listeners.removeCtxMenu = this.removeContextMenu.bind(this) ;
         let cancel = document.getElementById('context-menu--cancel') ;
-        if(cancel) cancel.addEventListener("click", this.removeContextMenu.bind(this)) ;
+        if(cancel) cancel.addEventListener("click", this.listeners.removeCtxMenu) ;
+
+        document.addEventListener("click", this.listeners.removeCtxMenu) ;
 
         let menu = document.getElementById('context-menu') ;
         if(!touch) {
@@ -179,6 +182,7 @@ class Toolbar {
     }
 
     removeContextMenu() {
+        document.removeEventListener("click", this.listeners.removeCtxMenu) ;
         let elem = document.getElementById('context-menu') ;
         if(elem) elem.remove() ;
     }
@@ -245,7 +249,7 @@ class Toolbar {
             lookUpTable.numIn = parseInt(bits) ;
             lookUpTable.numOut = 8 ;
 
-            lookUpTable.inLabels = (lookUpTable.numIn === 2 ? "01" : "0123").split("") ;
+            lookUpTable.inLabels = "01234567".split("") ;
             lookUpTable.outLabels = "01234567".split("") ;
 
             return lookUpTable ;
@@ -254,12 +258,13 @@ class Toolbar {
         lutDiv.innerHTML = `<span class="look-up-table-close--span">&#10006;</span><div>`+
             `<div id="look-up-table-scroll--div"><table id="look-up-table--table">` +
             `<thead><tr id="look-up-table--labels-row">` +
-            `<th>INPUT</th><th>OUTPUT</th>` +
+            `<th>ADDRESS</th><th>DATA</th>` +
             `</tr></thead><tbody id="look-up-table--tbody">` +
             `</tbody></table></div>` +
             `<input type="text" id="look-up-table-name--input" class="look-up-table--input" placeholder="Name" ` +
                 `maxlength="10" onkeyup='this.value = this.value.toUpperCase();'/>` +
-            `<select class="look-up-table--select"><option value="2">2-bit</option><option value="4">4-bit</option></select>` +
+            `<select class="look-up-table--select">` +
+            `<option value="2">2-bit</option><option value="4">4-bit</option><option value="8">8-bit</option></select>` +
             `<button id="look-up-table--button">Create ROM</button></div>` ;
 
         this.component.placeholder.appendChild(mask) ;

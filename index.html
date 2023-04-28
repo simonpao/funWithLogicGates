@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fun with Logic Gates</title>
     <script src="fun.js"></script>
+    <script src="classes/Coordinates.js"></script>
     <script src="classes/Item.js"></script>
     <script src="classes/IO.js"></script>
     <script src="classes/ComponentInterface.js"></script>
@@ -22,6 +23,8 @@
     <script src="classes/Component.js"></script>
     <script src="classes/AbstractedComponentSpec.js"></script>
     <script src="classes/AbstractedComponent.js"></script>
+    <script src="classes/MainMenu.js"></script>
+    <script src="classes/Button.js"></script>
     <script src="classes/Logger.js"></script>
     <script src="classes/Toolbar.js"></script>
     <script src="classes/ToastMessage.js"></script>
@@ -41,6 +44,12 @@
 <canvas id="canvas" width="1000" height="600"></canvas>
 <script type="application/javascript">
     fwlg = new FunWithLogicGates("canvas", Logger.logLvl.DEBUG) ;
+    let logger = new Logger(Logger.logLvl.DEBUG) ;
+
+    // Listen to saveGame event listener to know when user saves the game
+    document.getElementById("canvas").addEventListener("saveGame", e => {
+        logger.debug(e) ;
+    }) ;
 </script>
 </body>
 </html>

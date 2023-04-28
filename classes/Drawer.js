@@ -6,6 +6,7 @@ class Drawer {
             b: 80
         }
     }
+    backgroundColor = "white" ;
 
     constructor(canvas2dCtx, w, h, logLvl = Logger.logLvl.INFO) {
         this.logger = new Logger(logLvl, "Drawer") ;
@@ -18,7 +19,7 @@ class Drawer {
 
     clearCanvas() {
         // Whiteout whole canvas
-        this.canvas2dCtx.fillStyle = "white";
+        this.canvas2dCtx.fillStyle = this.backgroundColor;
         this.canvas2dCtx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
 
         // Inputs Boundary
@@ -597,7 +598,7 @@ class Drawer {
     }
 
     clearInputs() {
-        this.canvas2dCtx.fillStyle = "white";
+        this.canvas2dCtx.fillStyle = this.backgroundColor;
         this.canvas2dCtx.fillRect(0, 0, Drawer.dim.io.b-2, this.canvasHeight);
     }
 
@@ -627,7 +628,7 @@ class Drawer {
     }
 
     clearOutputs() {
-        this.canvas2dCtx.fillStyle = "white";
+        this.canvas2dCtx.fillStyle = this.backgroundColor;
         this.canvas2dCtx.fillRect(this.canvasWidth-Drawer.dim.io.b+2, 0, this.canvasWidth, this.canvasHeight);
     }
 

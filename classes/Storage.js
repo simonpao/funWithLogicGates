@@ -3,9 +3,10 @@ class Storage {
         this.key = key ;
     }
 
-    getObject() {
+    getObject(name) {
+        let key = typeof name === "undefined" ? `fun-with-logic-gates--${this.key}` : `fun-with-logic-gates--${this.key}--${name}` ;
         try {
-            let value = localStorage.getItem( `fun-with-logic-gates--${this.key}` );
+            let value = localStorage.getItem( key );
             let object = JSON.parse( value );
             return object || {} ;
         } catch ( e ) {
@@ -14,10 +15,11 @@ class Storage {
         }
     }
 
-    setObject(object) {
+    setObject(object, name) {
+        let key = typeof name === "undefined" ? `fun-with-logic-gates--${this.key}` : `fun-with-logic-gates--${this.key}--${name}` ;
         try {
             let value = JSON.stringify(object) ;
-            localStorage.setItem( `fun-with-logic-gates--${this.key}`, value ) ;
+            localStorage.setItem( key, value ) ;
             this.#setLastUpdated() ;
             return true ;
         } catch ( e ) {
