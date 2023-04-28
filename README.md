@@ -46,7 +46,6 @@ from scratch every time.
 - Use the buttons below the work area to create new inputs, outputs, and gates
   - Full screen mode is recommended for small screens
   - The buttons can be docked below or to the right of the work area in full screen mode
-- Long press on items in the work area to reveal a context menu
 - Tap on inputs, outputs, gates / components to reveal a context menu
   - If trying to establish a connection, tap on the component to which you want to connect 
 - Once connections are complete, tap on the "Truth Table" button to generate a table showing how all combinations of inputs affect the output(s)
