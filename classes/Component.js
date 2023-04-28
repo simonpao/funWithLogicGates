@@ -40,6 +40,7 @@ class Component extends ComponentInterface {
         this.color = Component.startColor ;
         this.specs = specs ;
 
+        this.listeners = {} ;
         this.canvas = document.getElementById(id);
         this.metadata = {
             canvas: {
@@ -47,12 +48,8 @@ class Component extends ComponentInterface {
                 height: this.canvas.getAttribute("height")
             }
         } ;
-        this.canvas.tabIndex = '1' ;
-        this.canvas.classList.add("fun-with-logic-gates--canvas") ;
 
-        this.placeholder = document.createElement("div") ;
-        this.placeholder.id = 'new-items-placeholder' ;
-        this.canvas.after(this.placeholder) ;
+        this.placeholder = document.getElementById('new-items-placeholder') ;
 
         this.drawer = new Drawer(
             this.canvas.getContext("2d"),
@@ -68,13 +65,25 @@ class Component extends ComponentInterface {
 
         this.removeComponentCallback = removeComponentCallback ;
 
-        this.canvas.addEventListener("contextmenu", this.displayContextMenu.bind(this));
-        this.canvas.addEventListener("mousedown", this.mouseClick.bind(this));
-        this.canvas.addEventListener("mouseup", this.mouseClickEnd.bind(this));
-        this.canvas.addEventListener("mouseout", this.mouseClickEnd.bind(this));
-        this.canvas.addEventListener("touchstart", this.touchStart.bind(this), { passive: false });
+        this.listeners.displayCtxMenu = this.displayContextMenu.bind(this) ;
+        this.listeners.mouseClick = this.mouseClick.bind(this) ;
+        this.listeners.mouseClickEnd = this.mouseClickEnd.bind(this) ;
+        this.listeners.touchStart = this.touchStart.bind(this) ;
+        this.canvas.addEventListener("contextmenu", this.listeners.displayCtxMenu);
+        this.canvas.addEventListener("mousedown", this.listeners.mouseClick);
+        this.canvas.addEventListener("mouseup", this.listeners.mouseClickEnd);
+        this.canvas.addEventListener("mouseout", this.listeners.mouseClickEnd);
+        this.canvas.addEventListener("touchstart", this.listeners.touchStart, { passive: false });
 
         this.loadCanvasState(specs) ;
+    }
+
+    removeEventListeners() {
+        this.canvas.removeEventListener("contextmenu", this.listeners.displayCtxMenu);
+        this.canvas.removeEventListener("mousedown", this.listeners.mouseClick);
+        this.canvas.removeEventListener("mouseup", this.listeners.mouseClickEnd);
+        this.canvas.removeEventListener("mouseout", this.listeners.mouseClickEnd);
+        this.canvas.removeEventListener("touchstart", this.listeners.touchStart, { passive: false });
     }
 
     loadComponentSpec(name, spec, editing) {
@@ -87,7 +96,7 @@ class Component extends ComponentInterface {
             this.outputs = spec.outputs ;
             this.connections = spec.connections ;
         } else {
-            let duplicate = Component.copyNewComponent(spec, this.specs) ;
+            let duplicate = Component.copyNewComponent(JSON.parse(JSON.stringify(spec)), this.specs) ;
             this.items = duplicate.items ;
             this.inputs = duplicate.inputs ;
             this.outputs = duplicate.outputs ;
@@ -98,6 +107,10 @@ class Component extends ComponentInterface {
         this.indices.inputs.index = Object.keys(spec.inputs).length ;
         this.indices.outputs.index = Object.keys(spec.outputs).length ;
         this.indices.connections.index = spec.connections.length ;
+
+        for(let i in this.inputs) {
+            this.propagateState(this.inputs[i]) ;
+        }
 
         this.updateCanvasState() ;
     }
@@ -207,8 +220,8 @@ class Component extends ComponentInterface {
         }
 
         if(type === Component.types.ROM) {
-            dim.w = 100;
-            dim.h = 125;
+            dim.w = 125;
+            dim.h = 175;
         }
 
         while(this.itemAtLocation(loc.x, loc.y) ||
@@ -1026,7 +1039,7 @@ class Component extends ComponentInterface {
         this.connecting.eventFn = this.connect.bind(this) ;
         this.connecting.eventFn(e) ;
         this.canvas.addEventListener("mousemove", this.connecting.eventFn);
-        this.canvas.addEventListener("touchmove", this.connecting.eventFn);
+        this.canvas.addEventListener("touchmove", this.connecting.eventFn, { passive: false });
     }
 
     endIOConnect(x, y) {
@@ -1166,35 +1179,11 @@ class Component extends ComponentInterface {
     }
 
     getCanvasOffset(e) {
-        let { x, y } = this.getCoordinates(e) ;
-        let elemRect = document.getElementById("canvas").getBoundingClientRect();
-        let left = elemRect.left, top = elemRect.top ;
-
-        let ratio = 1 ;
-        if(this.metadata.canvas.width > elemRect.width) {
-            ratio = elemRect.width / this.metadata.canvas.width ;
-        }
-
-        x = (x-left)/ratio ;
-        y = (y-top)/ratio ;
-        this.logger.debug(`getCanvasOffset(e): x: ${x}, y: ${y}, ratio: ${ratio}`) ;
-        return { x: x, y: y } ;
+        return Coordinates.getCanvasOffset(e, this.metadata.canvas.width, this.canvas) ;
     }
 
     getDocumentOffset(e) {
-        let { x, y } = this.getCoordinates(e) ;
-
-        let scrollY = window.scrollY ;
-        let scrollX = window.scrollX ;
-
-        return { x: x+scrollX, y: y+scrollY } ;
-    }
-
-    getCoordinates(e) {
-        let x = e.clientX ?? e.touches[0].clientX ;
-        let y = e.clientY ?? e.touches[0].clientY ;
-
-        return { x, y } ;
+        return Coordinates.getDocumentOffset(e) ;
     }
 
     updateCanvasState() {

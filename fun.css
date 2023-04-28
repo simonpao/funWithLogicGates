@@ -33,6 +33,10 @@
     user-select: none;
 }
 
+.fun-with-logic-gates--canvas.main-menu {
+    cursor: default ;
+}
+
 #canvas-container--div.full-screen .fun-with-logic-gates--canvas {
     max-height: 75vh;
     margin-bottom: 25vh;
@@ -115,6 +119,8 @@
 }
 
 #look-up-table--div,
+#load-state--div,
+#save-state--div,
 #save-component--div,
 #io-rename--div {
     display: flex;
@@ -136,6 +142,8 @@
 }
 
 #look-up-table--div .look-up-table-close--span,
+#load-state--div .load-state-close--span,
+#save-state--div .save-state-close--span,
 #save-component--div .save-component-close--span,
 #io-rename--div .io-rename-close--span {
     position: absolute;
@@ -144,6 +152,7 @@
     cursor: pointer;
 }
 
+#save-state--div div,
 #save-component--div div,
 #io-rename--div div {
     display: block;
@@ -198,13 +207,16 @@
     border-bottom: 2px solid var(--border-color);
 }
 
+#load-state--div .load-state--button,
 #look-up-table--div #look-up-table--button,
+#save-state--div #save-state--button,
 #save-component--div #save-component--button,
 #io-rename--div #io-rename--button,
 .toast-message--span button,
 #truth-table-close--button,
 #look-up-table--div .look-up-table--input,
 #look-up-table--div .look-up-table--select,
+#save-state--div #save-state--input,
 #save-component--div #save-component--input,
 #io-rename--div #io-rename--input,
 #fun-with-logic-gates--nav input[type="text"],
@@ -217,7 +229,21 @@
     margin: 0 5px 5px 0;
 }
 
+#load-state--div .load-state--error-span,
+#load-state--div .load-state--button {
+    width: 100% ;
+    font: 16px monospace;
+}
+
+#load-state--div .load-state--error-span {
+    align-content: center;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
 #look-up-table--div .look-up-table--input::placeholder,
+#save-state--div #save-state--input::placeholder,
 #save-component--div #save-component--input::placeholder,
 #io-rename--div #io-rename--input::placeholder,
 #fun-with-logic-gates--nav input[type="text"]::placeholder {
@@ -225,6 +251,7 @@
 }
 
 #look-up-table--div .look-up-table--input,
+#save-state--div #save-state--input,
 #save-component--div #save-component--input,
 #io-rename--div #io-rename--input,
 #fun-with-logic-gates--nav input[type="text"] {
@@ -235,6 +262,8 @@
 #look-up-table--div .look-up-table--input {
     width: 75px;
 }
+
+#save-state--div #save-state--input,
 #save-component--div #save-component--input {
     width: 200px;
 }
@@ -296,6 +325,8 @@
     border: 2px solid var(--border-color);
 }
 
+#load-state--div .load-state--button:hover,
+#save-state--div #save-state--button:hover,
 #io-rename--div #io-rename--button:hover,
 .toast-message--span button:hover,
 #truth-table-close--button:hover,
@@ -352,6 +383,7 @@
     z-index: 1001;
 }
 
+#load-state--div > div,
 #look-up-table--div > div {
     display: block;
     margin: auto;
@@ -365,6 +397,16 @@
     overflow: auto;
     border-bottom: 1px solid black;
     margin-bottom: 10px;
+}
+
+#load-state--div #load-state-scroll--div {
+    height: 100%;
+    width: 100% ;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display:flex;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
 #look-up-table--div table,
@@ -506,6 +548,8 @@
 
     #truth-table--div,
     #look-up-table--div,
+    #save-state--div,
+    #load-state--div,
     #save-component--div,
     #io-rename--div {
         top: 10vh;
