@@ -80,9 +80,11 @@ class Toolbar {
             "</div><div id='other-controls--div'>" +
             "<button id='main-menu--button'>Menu</button>" +
             "<button id='add-input--button'>Add Input</button>" +
-            "<input type='text' maxlength='5' id='add-input--input' placeholder='Input Label' value='IN' onkeyup='this.value = this.value.toUpperCase();'/>" +
+            "<input type='text' maxlength='5' id='add-input--input' placeholder='Input Label'" +
+                ` value='IN' oninput='this.value = this.value.toUpperCase().replace(/[^0-9A-Za-z-_+]/, "").substring(0,5);'/>` +
             "<button id='add-output--button'>Add Output</button>" +
-            "<input type='text' maxlength='5' id='add-output--input' placeholder='Output Label' value='OUT' onkeyup='this.value = this.value.toUpperCase();'/>" +
+            "<input type='text' maxlength='5' id='add-output--input' placeholder='Output Label'" +
+                ` value='OUT' oninput='this.value = this.value.toUpperCase().replace(/[^0-9A-Za-z-_+]/, "").substring(0,5);'/>` +
             "<button id='truth-table--button'>Truth Table</button>" +
             "<button id='clear-state--button'>Clear</button>" +
             "<button id='save-component--button'>Save</button>" +
@@ -221,11 +223,26 @@ class Toolbar {
         this.component.newItem(type, name, componentSpec) ;
     }
 
-    promptForLookUpTable() {
+    promptForLookUpTable(existingLookUpTable) {
         let mask = document.createElement("div") ;
         let lutDiv = document.createElement("div") ;
         mask.id = "canvas-mask--div" ;
         lutDiv.id = "look-up-table--div" ;
+
+        let formatAndSetCaret = (el) => {
+            el.innerText = el.innerText.replace(/[^0-1]/, "").substring(0,8);
+
+            if(el.childNodes.length) {
+                let range = document.createRange() ;
+                let sel = window.getSelection() ;
+
+                range.setStart(el.childNodes[0], el.innerText.length);
+                range.collapse(true);
+
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
 
         let insertRows = (elem, bits) => {
             elem.innerHTML = "" ;
@@ -233,8 +250,17 @@ class Toolbar {
                 let binary = (i >>> 0).toString(2).padStart(bits, '0') ;
                 let tr = document.createElement("tr") ;
                 tr.id = `look-up-table--values-${i}` ;
-                tr.innerHTML = `<td class="input--td">${binary}</td><td class="output--td" contenteditable="true">00000000</td>` ;
+                tr.innerHTML = `<td class="input--td">${binary}</td><td class="output--td" contenteditable="true">` +
+                    `${ existingLookUpTable?.values?.[binary] ? existingLookUpTable.values[binary] : '00000000'}` +
+                    `</td>` ;
                 elem.append(tr) ;
+            }
+
+            let editables = document.getElementsByClassName("output--td") ;
+            for(let i in editables) if(editables.hasOwnProperty(i)) {
+                editables[i].addEventListener("input", (e) => {
+                    formatAndSetCaret(e.currentTarget) ;
+                }) ;
             }
         }
 
@@ -262,17 +288,20 @@ class Toolbar {
             `</tr></thead><tbody id="look-up-table--tbody">` +
             `</tbody></table></div>` +
             `<input type="text" id="look-up-table-name--input" class="look-up-table--input" placeholder="Name" ` +
-                `maxlength="10" onkeyup='this.value = this.value.toUpperCase();'/>` +
-            `<select class="look-up-table--select">` +
-            `<option value="2">2-bit</option><option value="4">4-bit</option><option value="8">8-bit</option></select>` +
-            `<button id="look-up-table--button">Create ROM</button></div>` ;
+                `value="${existingLookUpTable?.name ? existingLookUpTable.name : ''}" ` +
+                `maxlength="10" oninput='this.value = this.value.toUpperCase().replace(/[^0-9A-Za-z-_+]/, "").substring(0,10);'/>` +
+            `<select class="look-up-table--select" ${existingLookUpTable ? 'disabled' : ''}>` +
+            `<option value="2" ${existingLookUpTable?.numIn === 2 ? "selected" : ""}>2-bit</option>` +
+            `<option value="4" ${existingLookUpTable?.numIn === 4 ? "selected" : ""}>4-bit</option>` +
+            `<option value="8" ${existingLookUpTable?.numIn === 8 ? "selected" : ""}>8-bit</option></select>` +
+            `<button id="look-up-table--button">${existingLookUpTable ? 'Update' : 'Create'} ROM</button></div>` ;
 
         this.component.placeholder.appendChild(mask) ;
         this.component.placeholder.appendChild(lutDiv) ;
 
         let tbody = document.getElementById("look-up-table--tbody") ;
 
-        insertRows(tbody, 2) ;
+        insertRows(tbody, existingLookUpTable?.numIn ? existingLookUpTable.numIn : 2) ;
 
         return new Promise((resolve) => {
             let save = document.querySelector(`#look-up-table--div #look-up-table--button`) ;

@@ -632,12 +632,21 @@ class Drawer {
         this.canvas2dCtx.fillRect(this.canvasWidth-Drawer.dim.io.b+2, 0, this.canvasWidth, this.canvasHeight);
     }
 
-    drawConnection(sx, sy, ex, ey, state = 0) {
+    drawConnection(sx, sy, ex, ey, state = 0, anchors) {
         this.canvas2dCtx.strokeStyle = state === 0 ? "black" : "red" ;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath();
         this.canvas2dCtx.moveTo(sx, sy) ;
-        this.canvas2dCtx.lineTo(ex, ey) ;
+
+        if(anchors && anchors.length) {
+            let points = [...anchors, {x: ex, y: ey}] ;
+            for(let i in points) {
+                this.canvas2dCtx.lineTo(points[i].x, points[i].y) ;
+            }
+        } else {
+            this.canvas2dCtx.lineTo(ex, ey) ;
+        }
+
         this.canvas2dCtx.stroke() ;
     }
 }

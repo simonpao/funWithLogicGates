@@ -45,7 +45,8 @@ class FunWithLogicGates {
         }
     }
 
-    initCanvas(id, logLvl) {
+    initCanvas(id, logLvl, name) {
+        if(name) this.currentSave = name ;
         this.activeSession = true ;
         this.updateState() ;
 
@@ -55,7 +56,8 @@ class FunWithLogicGates {
             logLvl,
             this.components,
             null,
-            this.removeComponentCallback.bind(this)
+            this.removeComponentCallback.bind(this),
+            this.editRomCallback.bind(this)
         ) ;
 
         this.logger.debug(`Initializing toolbar below element '#${id}'`) ;
@@ -69,6 +71,7 @@ class FunWithLogicGates {
         ) ;
 
         this.initButtons() ;
+        this.enterFullScreen(null, true) ;
     }
 
     initButtons() {
@@ -113,17 +116,17 @@ class FunWithLogicGates {
         }
     }
 
-    async enterFullScreen() {
-        if(!this.inFullScreen) {
+    async enterFullScreen(e, reinit = false) {
+        if(!this.inFullScreen && !reinit) {
             try {
                 await this.canvasContainer.requestFullscreen();
             } catch(e) {
                 this.logger.error(e) ;
-                new ToastMessage("Full screen mode not supported.", ToastMessage.ERROR).show() ;
+                new ToastMessage("Full screen mode not supported in this browser.", ToastMessage.ERROR).show() ;
                 return ;
             }
         }
-        else
+        else if (!reinit)
             await document.exitFullscreen() ;
 
         if(!this.changePositionBtn) {
@@ -145,9 +148,11 @@ class FunWithLogicGates {
                 this.toolbar.updateToolbarState() ;
             });
             this.fullScreenBtn.after(this.changePositionBtn) ;
+        } else if (reinit) {
+            this.fullScreenBtn.after(this.changePositionBtn) ;
         }
 
-        document.addEventListener('fullscreenchange', () => {
+        let toggleFullScreen = () => {
             if (document.fullscreenElement) {
                 this.inFullScreen = true ;
                 this.toolbar.inFullScreen = true ;
@@ -166,7 +171,12 @@ class FunWithLogicGates {
                 this.changePositionBtn.classList.add('hidden') ;
                 this.canvasContainer.classList.remove('full-screen') ;
             }
-        });
+        }
+
+        if (!reinit)
+            document.addEventListener('fullscreenchange', () => toggleFullScreen());
+        else
+            toggleFullScreen() ;
     }
 
     promptForComponentName() {
@@ -189,8 +199,11 @@ class FunWithLogicGates {
             let labelIn = document.querySelector(`#save-component--div #save-component--input`) ;
             labelIn.select() ;
             labelIn.focus() ;
+            labelIn.addEventListener("input", (e) => {
+                e.currentTarget.value = e.currentTarget.value.toUpperCase()
+                    .replace(/[^0-9A-Za-z-_+]/, "").substring(0,10) ;
+            }) ;
             labelIn.addEventListener("keyup", (e) => {
-                e.currentTarget.value = e.currentTarget.value.toUpperCase() ;
                 if(e.which === 13) {
                     save.dispatchEvent(new Event("click")) ;
                 }
@@ -256,6 +269,10 @@ class FunWithLogicGates {
             }
         }
         return false ;
+    }
+
+    async editRomCallback(lookUpTable) {
+        return await this.toolbar.promptForLookUpTable(lookUpTable) ;
     }
 
     saveGame(name) {

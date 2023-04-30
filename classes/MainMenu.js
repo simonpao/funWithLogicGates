@@ -32,7 +32,7 @@ class MainMenu {
             "#0099FF",
             () => {
                 this.removeMainMenu();
-                callbacks.startFn();
+                callbacks.startFn(this.currentSave);
             }
         );
         this.buttons.start = new Button(
@@ -45,7 +45,7 @@ class MainMenu {
             "#0099FF",
             () => {
                 this.removeMainMenu();
-                callbacks.startFn();
+                callbacks.startFn(this.currentSave);
             }
         );
         this.buttons.new = new Button(
@@ -74,9 +74,10 @@ class MainMenu {
             async () => {
                 let name = await this.promptForLoadName() ;
                 if(!name) return ;
+                this.currentSave = name ;
                 this.removeMainMenu();
                 if(callbacks.loadFn(name))
-                    callbacks.startFn();
+                    callbacks.startFn(this.currentSave);
             }
         );
         this.buttons.save = new Button(
@@ -89,6 +90,8 @@ class MainMenu {
             "#0d7979",
             async () => {
                 let name = await this.promptForSaveName() ;
+                if(!name) return ;
+                this.currentSave = name ;
                 callbacks.saveFn(name) ;
             }
         );
@@ -113,14 +116,22 @@ class MainMenu {
             let nameIn = document.querySelector(`#save-state--div #save-state--input`) ;
             nameIn.select() ;
             nameIn.focus() ;
+            nameIn.addEventListener("input", (e) => {
+                e.currentTarget.value = e.currentTarget.value.toLowerCase().replace(/[^0-9A-Za-z]/, '') ;
+            }) ;
             nameIn.addEventListener("keyup", (e) => {
-                e.currentTarget.value = e.currentTarget.value.toLowerCase() ;
                 if(e.which === 13) {
                     save.dispatchEvent(new Event("click")) ;
                 }
             }) ;
 
             save.addEventListener("click", () => {
+                let finishSave = () => {
+                    this.placeholder.removeChild(mask) ;
+                    this.placeholder.removeChild(saveDiv) ;
+                    resolve(saveName) ;
+                }
+
                 let saveName = document.querySelector(`#save-state--div #save-state--input`).value ;
 
                 if(!saveName) {
@@ -128,9 +139,13 @@ class MainMenu {
                     return ;
                 }
 
-                this.placeholder.removeChild(mask) ;
-                this.placeholder.removeChild(saveDiv) ;
-                resolve(saveName) ;
+                if(Object.keys(this.savesList).includes(saveName)) {
+                    new ToastMessage(`Are you sure you want to overwrite ${saveName}?`).confirm().then(confirm => {
+                        if(confirm) finishSave() ;
+                    }) ;
+                } else {
+                    finishSave() ;
+                }
             }) ;
             close.addEventListener("click", () => {
                 this.placeholder.removeChild(mask) ;

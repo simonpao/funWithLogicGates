@@ -27,7 +27,7 @@ class Component extends ComponentInterface {
         connections: {}
     } ;
 
-    constructor(id, logLvl = Logger.logLvl.INFO, specs, state, removeComponentCallback) {
+    constructor(id, logLvl = Logger.logLvl.INFO, specs, state, removeComponentCallback, editRomCallback) {
         super() ;
         // Whether this is being loaded for use on the canvas or an AbstractedComponentSpec
         if(id == null && logLvl == null && !!state) {
@@ -64,6 +64,7 @@ class Component extends ComponentInterface {
         this.indices.connections.index = 0 ;
 
         this.removeComponentCallback = removeComponentCallback ;
+        this.editRomCallback = editRomCallback ;
 
         this.listeners.displayCtxMenu = this.displayContextMenu.bind(this) ;
         this.listeners.mouseClick = this.mouseClick.bind(this) ;
@@ -558,17 +559,64 @@ class Component extends ComponentInterface {
     itemCollision(id, newX, newY) {
         let items = this.getAllItemsExcept(id) ;
         let thisItem = this.getItem(id) ;
+        let response = { x: newX, y: newY } ;
+        let count = 0 ;
 
-        if((newX < Drawer.dim.io.b+2 || newX + thisItem.w > this.metadata.canvas.width-(Drawer.dim.io.b+2)) ||
-            (newY < 2 || newY + thisItem.h > this.metadata.canvas.height-2))
-            return id;
+        // Adjust x, y to keep within borders
+        if(newX < Drawer.dim.io.b+2)
+            response.x = Drawer.dim.io.b+2 ;
 
-        for(let i in items) {
-            if (newX < (items[i].x + items[i].w) && (newX + thisItem.w) > items[i].x &&
-                newY < (items[i].y + items[i].h) && (newY + thisItem.h) > items[i].y )
-                return i ;
+        if(newX + thisItem.w > this.metadata.canvas.width-(Drawer.dim.io.b+2))
+            response.x = this.metadata.canvas.width-(Drawer.dim.io.b+2)-thisItem.w ;
+
+        if(newY < 2)
+            response.y = 2 ;
+
+        if(newY + thisItem.h > this.metadata.canvas.height-2)
+            response.y = this.metadata.canvas.height-2-thisItem.h ;
+
+        if(newX !== response.x || newY !== response.y) {
+            count++ ;
+            newX = response.x ;
+            newY = response.y ;
         }
-        return false ;
+
+        // Adjust x, y to keep out of other items' space
+        for(let i in items) {
+            let rectA = { x: newX, y: newY, w: thisItem.w, h: thisItem.h } ;
+            let rectB = { x: items[i].x, y: items[i].y, w: items[i].w, h: items[i].h } ;
+
+            if((Math.abs(rectA.x - rectB.x) <= (Math.abs(rectA.w + rectB.w) / 2)) &&
+               (Math.abs(rectA.y - rectB.y) <= (Math.abs(rectA.h + rectB.h) / 2))) {
+                response.acx = rectA.x+rectA.w/2 ;
+                response.acy = rectA.y+rectA.h/2 ;
+                response.bcx = rectB.x+rectB.w/2 ;
+                response.bcy = rectB.y+rectB.h/2 ;
+                response.dx  = response.acx - response.bcx ;
+                response.dy  = response.acy - response.bcy ;
+                if(Math.abs(response.dx) > Math.abs(response.dy)) {
+                    if(response.dx > 0)
+                        response.x = rectB.x + rectB.w + 1 ;
+                    else
+                        response.x = rectB.x - rectA.w - 1 ;
+                } else {
+                    if(response.dy > 0)
+                        response.y = rectB.y + rectB.h + 1 ;
+                    else
+                        response.y = rectB.y - rectA.h - 1 ;
+                }
+                if(newX !== response.x || newY !== response.y) {
+                    count++ ;
+                    newX = response.x ;
+                    newY = response.y ;
+                }
+                this.logger.debug(`itemCollision(): ${JSON.stringify({response, ...{ count }})}`) ;
+            }
+        }
+
+        if(count > 1)
+            return { x: false, y: false } ;
+        return response ;
     }
 
     inputAtLocation(x, y, touch = false) {
@@ -659,6 +707,7 @@ class Component extends ComponentInterface {
     }
 
     touchStart(e) {
+        if(e.touches.length > 1) return ;
         this.removeContextMenu() ;
         e.preventDefault() ;
         if(this.dragging.id)
@@ -686,7 +735,7 @@ class Component extends ComponentInterface {
         if(this.dragging.id)
             this.dragEnd();
 
-        if(!s && this.connecting.isConnecting)
+        if(s.type === "none" && this.connecting.isConnecting)
             this.cancelIOConnect();
 
         let menu = document.getElementById("context-menu") ;
@@ -724,6 +773,12 @@ class Component extends ComponentInterface {
     }
 
     displayContextMenu(e, touch = false) {
+        if(this.connecting.isConnecting && !touch) {
+            e.preventDefault() ;
+            this.cancelIOConnect();
+            return;
+        }
+
         let absPos = this.getDocumentOffset(e) ;
         let { x, y } = this.getCanvasOffset(e) ;
 
@@ -738,6 +793,10 @@ class Component extends ComponentInterface {
         if(something.type === "item") {
             menuItems ++ ;
             html += `<li><button data-id="${something.value.id}" data-type="item" id="context-menu--paint">Paint</button></li>` ;
+            if(something.value.type === Component.types.ROM) {
+                menuItems ++ ;
+                html += `<li><button data-id="${something.value.id}" data-type="item" id="context-menu--edit-rom">Edit</button></li>` ;
+            }
             menuItems ++ ;
             html += `<li><button data-id="${something.value.id}" data-type="item" id="context-menu--disconnect">Disconnect</button></li>` ;
             menuItems ++ ;
@@ -809,6 +868,9 @@ class Component extends ComponentInterface {
             let paint = document.getElementById('context-menu--paint') ;
             if(paint) paint.addEventListener("click", this.contextMenuItemPaint.bind(this)) ;
 
+            let editRom = document.getElementById('context-menu--edit-rom') ;
+            if(editRom) editRom.addEventListener("click", this.contextMenuEditRom.bind(this)) ;
+
             let remove = document.getElementById('context-menu--remove') ;
             if(remove) remove.addEventListener("click", this.contextMenuObjectRemove.bind(this)) ;
 
@@ -849,6 +911,7 @@ class Component extends ComponentInterface {
 
     contextMenuToggleInput(e) {
         let id = e.currentTarget.dataset.id ;
+        this.removeContextMenu() ;
         this.inputs[id].toggleState() ;
         this.propagateState(this.inputs[id]) ;
         this.drawer.fillInputs(this.inputs) ;
@@ -862,6 +925,20 @@ class Component extends ComponentInterface {
         this.getItem(id).color = this.color ;
         this.redrawCanvas() ;
         this.updateCanvasState() ;
+    }
+
+    async contextMenuEditRom(e) {
+        let id = e.currentTarget.dataset.id ;
+        this.removeContextMenu() ;
+        let rom = this.getItem(id) ;
+        let lookUpTable = await this.editRomCallback(rom.lookUpTable) ;
+        if(lookUpTable) {
+            rom.recreate(lookUpTable, id);
+            for(let i in this.inputs) {
+                this.propagateState(this.inputs[i]) ;
+            }
+            this.updateCanvasState() ;
+        }
     }
 
     contextMenuObjectRemove(e) {
@@ -929,7 +1006,7 @@ class Component extends ComponentInterface {
         ioRename.id = "io-rename--div" ;
 
         ioRename.innerHTML = `<span class="io-rename-close--span">&#10006;</span><div>`+
-            `<input type="text" maxlength="5" id="io-rename--input" placeholder="New Label" value="${io.label}">`+
+            `<input type="text" maxlength="6" id="io-rename--input" placeholder="New Label" value="${io.label}">`+
             `<button id="io-rename--button">Rename</button></div>` ;
 
         this.placeholder.appendChild(mask) ;
@@ -941,8 +1018,11 @@ class Component extends ComponentInterface {
             let labelIn = document.querySelector(`#io-rename--div #io-rename--input`) ;
             labelIn.select() ;
             labelIn.focus() ;
+            labelIn.addEventListener("input", (e) => {
+                e.currentTarget.value = e.currentTarget.value.toUpperCase()
+                    .replace(/[^0-9A-Za-z-_+]/, "").substring(0,6) ;
+            }) ;
             labelIn.addEventListener("keyup", (e) => {
-                e.currentTarget.value = e.currentTarget.value.toUpperCase() ;
                 if(e.which === 13) {
                     rename.dispatchEvent(new Event("click")) ;
                 }
@@ -1034,6 +1114,7 @@ class Component extends ComponentInterface {
                 this.connecting.connectTo = "input" ;
                 break ;
         }
+        this.connecting.anchors = [] ;
         this.logger.debug(this.connecting) ;
 
         this.connecting.eventFn = this.connect.bind(this) ;
@@ -1045,7 +1126,8 @@ class Component extends ComponentInterface {
     endIOConnect(x, y) {
         let something = this.somethingAtLocation(x, y) ;
         if(something.type === "none") {
-            this.cancelIOConnect();
+            //this.cancelIOConnect();
+            this.connecting.anchors.push({x, y}) ;
             return ;
         }
 
@@ -1077,7 +1159,11 @@ class Component extends ComponentInterface {
     }
 
     establishNewConnection(i,o) {
-        let con = new Connection(i, o) ;
+        let con = new Connection(i, o,
+            this.connecting.connectFrom === "output" ?
+                this.connecting.anchors.reverse() :
+                this.connecting.anchors
+        ) ;
         if(this.isConnectionToOutput(con.output.id)) return ;
         this.connections.push(con) ;
         this.propagateState(con.input) ;
@@ -1152,9 +1238,10 @@ class Component extends ComponentInterface {
         let newY = this.dragging.itemY - deltaY ;
 
         this.logger.debug(`drag(): deltaY: ${deltaX}; deltaY: ${deltaY}; newX: ${newX}; newY: ${newY}`) ;
-        if(!this.itemCollision(this.dragging.id, newX, newY)) {
-            this.moveItem(this.dragging.id, newX, newY);
-        }
+
+        let collision = this.itemCollision(this.dragging.id, newX, newY) ;
+        if(collision.x && collision.y)
+            this.moveItem(this.dragging.id, collision.x, collision.y);
     }
 
     connect(e) {
@@ -1167,7 +1254,7 @@ class Component extends ComponentInterface {
         else io = this.getOutput(this.connecting.start) ;
 
         this.redrawCanvas() ;
-        this.drawer.drawConnection(io.x, io.y, x, y) ;
+        this.drawer.drawConnection(io.x, io.y, x, y, 0, this.connecting.anchors) ;
     }
 
     isConnectionToOutput(output) {
@@ -1343,7 +1430,8 @@ class Component extends ComponentInterface {
             returnObject.connections[i] = Connection.fromIds(
                 returnObject,
                 typeof state.connections[i].input === "object" ? state.connections[i].input.id : state.connections[i].input,
-                typeof state.connections[i].output === "object" ? state.connections[i].output.id : state.connections[i].output
+                typeof state.connections[i].output === "object" ? state.connections[i].output.id : state.connections[i].output,
+                state.connections[i].anchors
             ) ;
 
         return returnObject ;
@@ -1361,7 +1449,7 @@ class Component extends ComponentInterface {
 
         for(let i in this.connections) {
             let cx = this.connections[i] ;
-            this.drawer.drawConnection(cx.input.x, cx.input.y, cx.output.x, cx.output.y, cx.state) ;
+            this.drawer.drawConnection(cx.input.x, cx.input.y, cx.output.x, cx.output.y, cx.state, cx.anchors) ;
         }
     }
 
