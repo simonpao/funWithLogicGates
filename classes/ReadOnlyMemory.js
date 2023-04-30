@@ -1,6 +1,10 @@
 class ReadOnlyMemory extends Item {
     constructor(lookUpTable, id, x, y, w, h, color) {
         super(Component.types.ROM, id, x, y, w, h, color, lookUpTable.numOut, lookUpTable.numIn) ;
+        this.recreate(lookUpTable, id) ;
+    }
+
+    recreate(lookUpTable, id) {
         this.name = lookUpTable.name ;
         this.lookUpTable = lookUpTable ;
 

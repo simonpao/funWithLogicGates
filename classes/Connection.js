@@ -1,5 +1,5 @@
 class Connection {
-    constructor(i, o) {
+    constructor(i, o, anchors) {
         let temp ;
         if(i.constructor.name === "Output") {
             temp = i ;
@@ -15,16 +15,19 @@ class Connection {
         i.connectedTo = o ;
         o.connectedTo = i ;
         i.connection = o.connection = this ;
+
+        this.anchors = anchors ;
     }
 
     toggleState() {
         this.state = this.state === 0 ? 1 : 0 ;
     }
 
-    static fromIds(comp, inputId, outputId) {
+    static fromIds(comp, inputId, outputId, anchors) {
         return new Connection(
             Component.getInputFromComponent(inputId, comp),
-            Component.getOutputFromComponent(outputId, comp)
+            Component.getOutputFromComponent(outputId, comp),
+            anchors
         ) ;
     }
 
@@ -32,7 +35,8 @@ class Connection {
         return {
             input: this.input.id,
             output: this.output.id,
-            state: this.state
+            state: this.state,
+            anchors: this.anchors
         } ;
     }
 }
