@@ -81,10 +81,10 @@ class Toolbar {
             "<button id='main-menu--button'>Menu</button>" +
             "<button id='add-input--button'>Add Input</button>" +
             "<input type='text' maxlength='5' id='add-input--input' placeholder='Input Label'" +
-                ` value='IN' oninput='this.value = this.value.toUpperCase().replace(/[^0-9A-Za-z-_+]/, "").substring(0,5);'/>` +
+                ` value='IN' oninput='this.value = this.value.toUpperCase().replace(/[^0-9A-Za-z-+]/, "").substring(0,5);'/>` +
             "<button id='add-output--button'>Add Output</button>" +
             "<input type='text' maxlength='5' id='add-output--input' placeholder='Output Label'" +
-                ` value='OUT' oninput='this.value = this.value.toUpperCase().replace(/[^0-9A-Za-z-_+]/, "").substring(0,5);'/>` +
+                ` value='OUT' oninput='this.value = this.value.toUpperCase().replace(/[^0-9A-Za-z-+]/, "").substring(0,5);'/>` +
             "<button id='truth-table--button'>Truth Table</button>" +
             "<button id='clear-state--button'>Clear</button>" +
             "<button id='save-component--button'>Save</button>" +
@@ -289,7 +289,7 @@ class Toolbar {
             `</tbody></table></div>` +
             `<input type="text" id="look-up-table-name--input" class="look-up-table--input" placeholder="Name" ` +
                 `value="${existingLookUpTable?.name ? existingLookUpTable.name : ''}" ` +
-                `maxlength="10" oninput='this.value = this.value.toUpperCase().replace(/[^0-9A-Za-z-_+]/, "").substring(0,10);'/>` +
+                `maxlength="10" oninput='this.value = this.value.toUpperCase().replace(/[^0-9A-Za-z-+]/, "").substring(0,10);'/>` +
             `<select class="look-up-table--select" ${existingLookUpTable ? 'disabled' : ''}>` +
             `<option value="2" ${existingLookUpTable?.numIn === 2 ? "selected" : ""}>2-bit</option>` +
             `<option value="4" ${existingLookUpTable?.numIn === 4 ? "selected" : ""}>4-bit</option>` +
