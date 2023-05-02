@@ -93,6 +93,8 @@ class FunWithLogicGates {
         this.currentComponent.connections = [] ;
 
         this.currentComponent.removeEventListeners() ;
+        this.currentComponent.dragging = {} ;
+        this.currentComponent.connecting = {} ;
         this.toolbar.toolbar.remove() ;
         this.mainMenu.renderMainMenu(this.activeSession, this.savesList, this.currentSave) ;
     }
@@ -201,7 +203,7 @@ class FunWithLogicGates {
             labelIn.focus() ;
             labelIn.addEventListener("input", (e) => {
                 e.currentTarget.value = e.currentTarget.value.toUpperCase()
-                    .replace(/[^0-9A-Za-z-_+]/, "").substring(0,10) ;
+                    .replace(/[^0-9A-Za-z-+]/, "").substring(0,10) ;
             }) ;
             labelIn.addEventListener("keyup", (e) => {
                 if(e.which === 13) {

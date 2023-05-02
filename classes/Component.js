@@ -582,7 +582,9 @@ class Component extends ComponentInterface {
         }
 
         // Adjust x, y to keep out of other items' space
-        for(let i in items) {
+        let keys = Object.keys(items) ;
+        for(let k = 0; k < keys.length; k++) {
+            let i = keys[k] ;
             let rectA = { x: newX, y: newY, w: thisItem.w, h: thisItem.h } ;
             let rectB = { x: items[i].x, y: items[i].y, w: items[i].w, h: items[i].h } ;
 
@@ -606,10 +608,13 @@ class Component extends ComponentInterface {
                         response.y = rectB.y - rectA.h - 1 ;
                 }
                 if(newX !== response.x || newY !== response.y) {
+                    k = -1 ;
                     count++ ;
                     newX = response.x ;
                     newY = response.y ;
                 }
+                if(count > 1)
+                    break ;
                 this.logger.debug(`itemCollision(): ${JSON.stringify({response, ...{ count }})}`) ;
             }
         }
@@ -649,12 +654,12 @@ class Component extends ComponentInterface {
         let { x, y } = this.getCanvasOffset(e) ;
 
         if(this.connecting.isConnecting) {
-            this.endIOConnect(x, y) ;
+            this.endIOConnect(x, y, touch) ;
             return;
         }
 
-        let input = this.inputAtLocation(x, y) ;
-        let output = this.outputAtLocation(x,y) ;
+        let input = this.inputAtLocation(x, y, touch) ;
+        let output = this.outputAtLocation(x,y, touch) ;
         if(input || output) {
             let type = input ? "input" : "output";
             let io = input ? input : output;
@@ -730,7 +735,7 @@ class Component extends ComponentInterface {
 
     touchEndCallback(tse) {
         let { x, y } = this.getCanvasOffset(tse) ;
-        let s = this.somethingAtLocation(x, y) ;
+        let s = this.somethingAtLocation(x, y, true) ;
 
         if(this.dragging.id)
             this.dragEnd();
@@ -1020,7 +1025,7 @@ class Component extends ComponentInterface {
             labelIn.focus() ;
             labelIn.addEventListener("input", (e) => {
                 e.currentTarget.value = e.currentTarget.value.toUpperCase()
-                    .replace(/[^0-9A-Za-z-_+]/, "").substring(0,6) ;
+                    .replace(/[^0-9A-Za-z-+]/, "").substring(0,6) ;
             }) ;
             labelIn.addEventListener("keyup", (e) => {
                 if(e.which === 13) {
@@ -1123,8 +1128,8 @@ class Component extends ComponentInterface {
         this.canvas.addEventListener("touchmove", this.connecting.eventFn, { passive: false });
     }
 
-    endIOConnect(x, y) {
-        let something = this.somethingAtLocation(x, y) ;
+    endIOConnect(x, y, touch = false) {
+        let something = this.somethingAtLocation(x, y, touch) ;
         if(something.type === "none") {
             //this.cancelIOConnect();
             this.connecting.anchors.push({x, y}) ;
@@ -1197,9 +1202,10 @@ class Component extends ComponentInterface {
 
         this.dragging.eventFn = this.drag.bind(this) ;
         if(touch) {
+            this.dragging.eventFnTouchEnd = this.dragEnd.bind(this) ;
             this.canvas.addEventListener("touchmove",   this.dragging.eventFn, { passive: false });
-            this.canvas.addEventListener("touchend",    this.dragEnd.bind(this));
-            this.canvas.addEventListener("touchcancel", this.dragEnd.bind(this));
+            this.canvas.addEventListener("touchend",    this.dragging.eventFnTouchEnd);
+            this.canvas.addEventListener("touchcancel", this.dragging.eventFnTouchEnd);
         } else {
             this.canvas.addEventListener("mousemove", this.dragging.eventFn);
         }
@@ -1217,10 +1223,11 @@ class Component extends ComponentInterface {
 
         this.canvas.removeEventListener("mousemove",   this.dragging.eventFn);
         this.canvas.removeEventListener("touchmove",   this.dragging.eventFn, { passive: false });
-        this.canvas.removeEventListener("touchend",    this.dragEnd.bind(this));
-        this.canvas.removeEventListener("touchcancel", this.dragEnd.bind(this));
+        this.canvas.removeEventListener("touchend",    this.dragging.eventFnTouchEnd);
+        this.canvas.removeEventListener("touchcancel", this.dragging.eventFnTouchEnd);
 
         delete this.dragging.eventFn ;
+        delete this.dragging.eventFnTouchEnd ;
 
         this.updateCanvasState() ;
     }

@@ -49,7 +49,7 @@ from scratch every time.
 - Tap on inputs, outputs, gates / components to reveal a context menu
   - If trying to establish a connection, tap on the component to which you want to connect 
 - Once connections are complete, tap on the "Truth Table" button to generate a table showing how all combinations of inputs affect the output(s)
-- If satisfied with the circuit, tap "Save" to abstract the circuit into it's own named component
+- If satisfied with the circuit, tap "Save" to abstract the circuit into its own named component
   - This will place a new button in the toolbar which can be tapped to add the new component to the work area
   - Long press on component buttons to edit or delete created components
 
