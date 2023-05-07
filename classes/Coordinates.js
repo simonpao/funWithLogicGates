@@ -24,8 +24,8 @@ class Coordinates {
     }
 
     static getCoordinates(e) {
-        let x = e.clientX ?? e.touches[0].clientX ;
-        let y = e.clientY ?? e.touches[0].clientY ;
+        let x = e.clientX ?? (e.touches.length ? e.touches[0].clientX : e.changedTouches[0].clientX) ;
+        let y = e.clientY ?? (e.touches.length ? e.touches[0].clientY : e.changedTouches[0].clientY) ;
 
         return { x, y } ;
     }

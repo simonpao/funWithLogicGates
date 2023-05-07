@@ -33,39 +33,40 @@ class Logger {
         this.labels[Logger.logLvl.DEBUG] = "DEBUG"
     }
 
-    log(message, level = Logger.logLvl.INFO) {
+    log(level, ...message) {
         if(level > this.level) return ;
         let prefix = `${this.labels[level]}${this.label === "" ? "" : " ["+ this.label+ "]"}:` ;
+        message = [prefix, ...message] ;
         switch(level) {
             case Logger.logLvl.PANIC:
             case Logger.logLvl.ERROR:
-                this.writeError(prefix, message) ;
+                this.writeError(...message) ;
                 break;
             case Logger.logLvl.WARN:
             case Logger.logLvl.INFO:
             case Logger.logLvl.DEBUG:
-                this.writeLog(prefix, message) ;
+                this.writeLog(...message) ;
                 break;
         }
     }
 
-    panic(message) {
-        this.log(message, Logger.logLvl.PANIC) ;
+    panic(...message) {
+        this.log(Logger.logLvl.PANIC, ...message) ;
     }
 
-    error(message) {
-        this.log(message, Logger.logLvl.ERROR) ;
+    error(...message) {
+        this.log(Logger.logLvl.ERROR, ...message) ;
     }
 
-    warn(message) {
-        this.log(message, Logger.logLvl.WARN) ;
+    warn(...message) {
+        this.log(Logger.logLvl.WARN, ...message) ;
     }
 
-    info(message) {
-        this.log(message, Logger.logLvl.INFO) ;
+    info(...message) {
+        this.log(Logger.logLvl.INFO, ...message) ;
     }
 
-    debug(message) {
-        this.log(message, Logger.logLvl.DEBUG) ;
+    debug(...message) {
+        this.log(Logger.logLvl.DEBUG, ...message) ;
     }
 }

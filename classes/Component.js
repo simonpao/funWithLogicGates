@@ -109,9 +109,12 @@ class Component extends ComponentInterface {
         this.indices.outputs.index = Object.keys(spec.outputs).length ;
         this.indices.connections.index = spec.connections.length ;
 
-        for(let i in this.inputs) {
-            this.propagateState(this.inputs[i]) ;
-        }
+        let start = new Date().getTime() ;
+        let counter = { count: 0 } ;
+        this.propagateStates(this.inputs, counter) ;
+        let end = new Date().getTime() ;
+        let total = end-start ;
+        this.logger.debug(`propagateState for component inputs took ${total.toLocaleString()}ms for ${counter.count.toLocaleString()} iterations`, counter) ;
 
         this.updateCanvasState() ;
     }
@@ -556,12 +559,7 @@ class Component extends ComponentInterface {
         return false ;
     }
 
-    itemCollision(id, newX, newY) {
-        let items = this.getAllItemsExcept(id) ;
-        let thisItem = this.getItem(id) ;
-        let response = { x: newX, y: newY } ;
-        let count = 0 ;
-
+    detectCollisionWithWall(thisItem, newX, newY, response) {
         // Adjust x, y to keep within borders
         if(newX < Drawer.dim.io.b+2)
             response.x = Drawer.dim.io.b+2 ;
@@ -576,14 +574,27 @@ class Component extends ComponentInterface {
             response.y = this.metadata.canvas.height-2-thisItem.h ;
 
         if(newX !== response.x || newY !== response.y) {
-            count++ ;
-            newX = response.x ;
-            newY = response.y ;
+            return 1 ;
         }
+
+        return 0;
+    }
+
+    itemCollision(id, newX, newY) {
+        let items = this.getAllItemsExcept(id) ;
+        let thisItem = this.getItem(id) ;
+        let response = { x: newX, y: newY } ;
+        let count = 0 ;
 
         // Adjust x, y to keep out of other items' space
         let keys = Object.keys(items) ;
         for(let k = 0; k < keys.length; k++) {
+            if(k === 0) {
+                count += this.detectCollisionWithWall(thisItem, newX, newY, response);
+                newX = response.x ;
+                newY = response.y ;
+            }
+
             let i = keys[k] ;
             let rectA = { x: newX, y: newY, w: thisItem.w, h: thisItem.h } ;
             let rectB = { x: items[i].x, y: items[i].y, w: items[i].w, h: items[i].h } ;
@@ -672,7 +683,14 @@ class Component extends ComponentInterface {
             } else {
                 if(type === "output" || typeof this.inputs[io.id] === "undefined") return ;
                 this.inputs[io.id].toggleState() ;
-                this.propagateState(this.inputs[io.id]) ;
+
+                let start = new Date().getTime() ;
+                let counter = { count: 0 } ;
+                this.propagateState(this.inputs[io.id], counter) ;
+                let end = new Date().getTime() ;
+                let total = end-start ;
+                this.logger.debug(`propagateState for ${io.id} took ${total.toLocaleString()}ms for ${counter.count.toLocaleString()} iterations`, counter) ;
+
                 this.drawer.fillInputs(this.inputs) ;
                 this.updateCanvasState() ;
             }
@@ -733,18 +751,29 @@ class Component extends ComponentInterface {
         this.canvas.removeEventListener("touchcancel", this.touch.callbackCancel) ;
     }
 
-    touchEndCallback(tse) {
-        let { x, y } = this.getCanvasOffset(tse) ;
+    touchEndCallback(tse, e) {
+        let { x, y } = this.getCanvasOffset(e) ;
         let s = this.somethingAtLocation(x, y, true) ;
 
         if(this.dragging.id)
             this.dragEnd();
 
-        if(s.type === "none" && this.connecting.isConnecting)
-            this.cancelIOConnect();
+        if(s.type === "none" && this.connecting.isConnecting) {
+            this.addConnectionAnchorPoint(x, y) ;
+            this.connect(e) ;
+        }
 
-        let menu = document.getElementById("context-menu") ;
-        if(!menu) this.displayContextMenu(tse, true) ;
+        let input = this.inputAtLocation(x+50, y, true) ;
+        if(input && typeof this.inputs[input.id] !== "undefined") {
+            this.inputs[input.id].toggleState() ;
+            this.propagateState(this.inputs[input.id]) ;
+            this.drawer.fillInputs(this.inputs) ;
+            this.updateCanvasState() ;
+        } else {
+            let menu = document.getElementById("context-menu") ;
+            if(!menu) this.displayContextMenu(tse, true) ;
+        }
+
         this.removeTouchEventListeners() ;
     }
 
@@ -939,9 +968,7 @@ class Component extends ComponentInterface {
         let lookUpTable = await this.editRomCallback(rom.lookUpTable) ;
         if(lookUpTable) {
             rom.recreate(lookUpTable, id);
-            for(let i in this.inputs) {
-                this.propagateState(this.inputs[i]) ;
-            }
+            this.propagateStates(this.inputs) ;
             this.updateCanvasState() ;
         }
     }
@@ -1128,11 +1155,17 @@ class Component extends ComponentInterface {
         this.canvas.addEventListener("touchmove", this.connecting.eventFn, { passive: false });
     }
 
+    addConnectionAnchorPoint(x, y) {
+        x = Math.round(x) ;
+        y = Math.round(y) ;
+        this.connecting.anchors.push({x, y}) ;
+    }
+
     endIOConnect(x, y, touch = false) {
         let something = this.somethingAtLocation(x, y, touch) ;
         if(something.type === "none") {
             //this.cancelIOConnect();
-            this.connecting.anchors.push({x, y}) ;
+            this.addConnectionAnchorPoint(x, y) ;
             return ;
         }
 
@@ -1171,7 +1204,13 @@ class Component extends ComponentInterface {
         ) ;
         if(this.isConnectionToOutput(con.output.id)) return ;
         this.connections.push(con) ;
-        this.propagateState(con.input) ;
+
+        let start = new Date().getTime() ;
+        let counter = { count: 0 } ;
+        this.propagateState(con.input, counter) ;
+        let end = new Date().getTime() ;
+        let total = end-start ;
+        this.logger.debug(`propagateState for connection took ${total.toLocaleString()}ms for ${counter.count.toLocaleString()} iterations`, counter) ;
     }
 
     cancelIOConnect() {
@@ -1191,6 +1230,7 @@ class Component extends ComponentInterface {
         this.logger.debug(`dragStart(): x: ${x}; y: ${y}${i ? "; i: " + i : ""}`) ;
         if(i === false) return ;
 
+        this.cancelIOConnect() ;
         this.canvas.style.cursor = "grabbing" ;
 
         let item = this.getItem(i) ;
@@ -1249,6 +1289,9 @@ class Component extends ComponentInterface {
         let collision = this.itemCollision(this.dragging.id, newX, newY) ;
         if(collision.x && collision.y)
             this.moveItem(this.dragging.id, collision.x, collision.y);
+
+        //this.drawer.test(collision.x, collision.y, "blue") ;
+        //this.drawer.test(newX, newY) ;
     }
 
     connect(e) {
@@ -1294,6 +1337,7 @@ class Component extends ComponentInterface {
     loadCanvasState() {
         let state = this.storage.getObject() ;
 
+        let start = new Date().getTime() ;
         this.setFromState(state) ;
 
         if(state.indices) {
@@ -1302,12 +1346,22 @@ class Component extends ComponentInterface {
             this.indices.outputs.index = state.indices.outputs.index;
             this.indices.connections.index = state.indices.connections.index;
         }
+        let end = new Date().getTime() ;
+        let total = end-start ;
+        this.logger.debug(`setFromState took ${total}ms`) ;
 
-        for(let i in this.inputs) {
-            this.propagateState(this.inputs[i]) ;
-        }
+        start = new Date().getTime() ;
+        let counter = { count: 0 } ;
+        this.propagateStates(this.inputs, counter) ;
+        end = new Date().getTime() ;
+        total = end-start ;
+        this.logger.debug(`propagateState for all inputs took ${total.toLocaleString()}ms for ${counter.count.toLocaleString()} iterations`, counter) ;
 
+        start = new Date().getTime() ;
         this.redrawCanvas() ;
+        end = new Date().getTime() ;
+        total = end-start ;
+        this.logger.debug(`redrawCanvas for all inputs took ${total}ms`) ;
     }
 
     constructFromState(state, specs) {

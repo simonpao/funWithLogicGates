@@ -322,7 +322,8 @@ class FunWithLogicGates {
         this.storage.setObject({
             activeSession: this.activeSession,
             savesList: this.savesList,
-            components: this.components
+            components: this.components,
+            currentSave: this.currentSave
         }) ;
     }
 
@@ -330,6 +331,7 @@ class FunWithLogicGates {
         let state = this.storage.getObject() ;
         this.activeSession = state.activeSession ;
         this.savesList = typeof state.savesList === "undefined" ? {} : state.savesList ;
+        this.currentSave = typeof state.currentSave === "undefined" ? "" : state.currentSave ;
 
         for(let i in state.components) {
             this.logger.debug(`Loading component ${i}`) ;
