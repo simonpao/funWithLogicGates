@@ -75,16 +75,14 @@ class AbstractedComponent extends Item {
         this.inputs[0].y = this.y+(this.h/2) ;
     }
 
-    determineInputState() {
-        let inIds = Object.keys(this.spec.inputs) ;
-        let outIds = Object.keys(this.spec.outputs) ;
-
-        for(let i of inIds) {
+    determineInputState(counter) {
+        let beforeCallback = i => {
             this.spec.inputs[i].state = this.outputs.filter(item => item.specId === i)[0].state ;
-            this.spec.propagateState(this.spec.inputs[i]) ;
-        }
+        } ;
 
-        for(let o of outIds) {
+        this.spec.propagateStates(this.spec.inputs, counter, beforeCallback.bind(this)) ;
+
+        for(let o in this.spec.outputs) {
             this.inputs.filter(item => item.specId === o)[0].state = this.spec.outputs[o].state ;
         }
     }

@@ -590,8 +590,8 @@ class Drawer {
         }
     }
 
-    test(x,y) {
-        this.canvas2dCtx.fillStyle = "red";
+    test(x, y, color) {
+        this.canvas2dCtx.fillStyle = color ?? "red";
         this.canvas2dCtx.beginPath() ;
         this.canvas2dCtx.arc(x, y, 5, 0, Math.PI * 2, false) ;
         this.canvas2dCtx.fill();
