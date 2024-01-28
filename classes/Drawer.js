@@ -595,6 +595,11 @@ class Drawer {
         this.canvas2dCtx.beginPath() ;
         this.canvas2dCtx.arc(x, y, 5, 0, Math.PI * 2, false) ;
         this.canvas2dCtx.fill();
+
+        // Label
+        this.canvas2dCtx.font = "12px Monospace";
+        let coordinates = `${Math.round(x)}, ${Math.round(y)}` ;
+        this.canvas2dCtx.fillText(coordinates, x-(coordinates.length*7/2), y-10);
     }
 
     clearInputs() {

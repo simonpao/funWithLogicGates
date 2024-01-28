@@ -1,17 +1,22 @@
 class Coordinates {
-    static getCanvasOffset(e, w, canvas) {
+    static orientation = {
+        LANDSCAPE: 0x00,
+        PORTRAIT: 0x01
+    } ;
+
+    static getCanvasOffset(e, w, h, canvas, orientation = Coordinates.orientation.LANDSCAPE) {
         let { x, y } = Coordinates.getCoordinates(e) ;
-        let elemRect = canvas.getBoundingClientRect();
-        let left = elemRect.left, top = elemRect.top ;
+        let { height, width, left, top } = canvas.getBoundingClientRect();
 
         let ratio = 1 ;
-        if(w > elemRect.width) {
-            ratio = elemRect.width / w ;
+        let compare = orientation === Coordinates.orientation.LANDSCAPE ? width : height ;
+        if(w > width) {
+            ratio = compare / w ;
         }
 
         x = (x-left)/ratio ;
         y = (y-top)/ratio ;
-        return { x: x, y: y } ;
+        return orientation === Coordinates.orientation.LANDSCAPE ? { x, y } : { x: y, y: h-x } ;
     }
 
     static getDocumentOffset(e) {

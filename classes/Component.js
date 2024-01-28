@@ -27,7 +27,7 @@ class Component extends ComponentInterface {
         connections: {}
     } ;
 
-    constructor(id, logLvl = Logger.logLvl.INFO, specs, state, removeComponentCallback, editRomCallback) {
+    constructor(id, logLvl = Logger.logLvl.INFO, specs, state, removeComponentCallback, editRomCallback, options = {}) {
         super() ;
         // Whether this is being loaded for use on the canvas or an AbstractedComponentSpec
         if(id == null && logLvl == null && !!state) {
@@ -45,7 +45,8 @@ class Component extends ComponentInterface {
         this.metadata = {
             canvas: {
                 width: this.canvas.getAttribute("width"),
-                height: this.canvas.getAttribute("height")
+                height: this.canvas.getAttribute("height"),
+                orientation: options.orientation ?? Coordinates.orientation.LANDSCAPE
             }
         } ;
 
@@ -77,6 +78,16 @@ class Component extends ComponentInterface {
         this.canvas.addEventListener("touchstart", this.listeners.touchStart, { passive: false });
 
         this.loadCanvasState(specs) ;
+    }
+
+    changeCanvasDimensions(orientation) {
+        this.metadata = {
+            canvas: {
+                width: this.canvas.getAttribute("width"),
+                height: this.canvas.getAttribute("height"),
+                orientation: orientation ?? Coordinates.orientation.LANDSCAPE
+            }
+        } ;
     }
 
     removeEventListeners() {
@@ -736,6 +747,9 @@ class Component extends ComponentInterface {
         if(this.dragging.id)
             this.dragEnd() ;
 
+        //let { x, y } = this.getCanvasOffset(e) ;
+        //this.drawer.test(x, y, "red") ;
+
         this.touch.callbackEnd = this.touchEndCallback.bind(this, e) ;
         this.touch.callbackMove = this.touchMoveCallback.bind(this, e) ;
         this.touch.callbackCancel = this.touchCancelCallback.bind(this) ;
@@ -1316,7 +1330,7 @@ class Component extends ComponentInterface {
     }
 
     getCanvasOffset(e) {
-        return Coordinates.getCanvasOffset(e, this.metadata.canvas.width, this.canvas) ;
+        return Coordinates.getCanvasOffset(e, this.metadata.canvas.width, this.metadata.canvas.height, this.canvas, this.metadata.canvas.orientation) ;
     }
 
     getDocumentOffset(e) {

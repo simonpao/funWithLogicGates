@@ -1,10 +1,14 @@
 class MainMenu {
     backgroundColor = "#dae0da" ;
+    orientation = Coordinates.orientation.LANDSCAPE ;
 
-    constructor(canvas, activeSession, logLvl, callbacks) {
+    constructor(canvas, activeSession, logLvl, callbacks, options = {}) {
         this.logger = new Logger(logLvl, "MainMenu") ;
         this.activeSession = activeSession ;
         this.savesList = {} ;
+
+        if(options.orientation)
+            this.orientation = options.orientation ;
 
         this.listeners = {
             move: this.handleMouseMove.bind(this),
@@ -95,6 +99,12 @@ class MainMenu {
                 callbacks.saveFn(name) ;
             }
         );
+    }
+
+    changeCanvasDimensions(orientation) {
+        this.width = this.canvas.getAttribute("width") ;
+        this.height = this.canvas.getAttribute("height") ;
+        this.orientation = orientation ?? Coordinates.orientation.LANDSCAPE ;
     }
 
     promptForSaveName() {
@@ -303,7 +313,7 @@ class MainMenu {
 
     handleMouseMove(e) {
         e.preventDefault() ;
-        let { x, y } = Coordinates.getCanvasOffset(e, this.width, this.canvas) ;
+        let { x, y } = Coordinates.getCanvasOffset(e, this.width, this.height, this.canvas, this.orientation) ;
         let hovering = false ;
         let buttons = this.getActiveButtons() ;
         for(let i in buttons) {
@@ -325,7 +335,7 @@ class MainMenu {
     handleMouseClick(e) {
         e.preventDefault() ;
         this.canvas.removeEventListener("touchend", this.listeners.touchClick, { passive: false });
-        let { x, y } = Coordinates.getCanvasOffset(e, this.width, this.canvas) ;
+        let { x, y } = Coordinates.getCanvasOffset(e, this.width, this.height, this.canvas, this.orientation) ;
         let buttons = this.getActiveButtons() ;
         for(let i in buttons) {
             if(buttons[i].isAtLocation(x, y)) {

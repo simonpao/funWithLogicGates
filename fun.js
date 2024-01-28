@@ -1,14 +1,18 @@
 class FunWithLogicGates {
     components = {} ;
     builtIn = ['AND', 'OR', 'NOT'] ;
+    orientation = Coordinates.orientation.LANDSCAPE ;
 
-    constructor(id, logLvl) {
+    constructor(id, logLvl, options = {}) {
         this.logger = new Logger(logLvl, "FunWithLogicGates") ;
         this.storage = new Storage('state') ;
         this.inFullScreen = false ;
         this.activeSession = false ;
         this.savesList = {} ;
         this.currentSave = "" ;
+
+        if(options.orientation)
+            this.orientation = options.orientation ;
 
         // Move the canvas into a parent wrapper div
         this.canvas = document.getElementById(id) ;
@@ -35,7 +39,7 @@ class FunWithLogicGates {
             newFn: this.startNew.bind(this),
             saveFn: this.saveGame.bind(this),
             loadFn: this.loadGame.bind(this)
-        }) ;
+        }, { orientation: this.orientation }) ;
 
         if(!this.activeSession) {
             this.logger.debug(`Initializing main menu on element '#${id}'`) ;
@@ -57,7 +61,8 @@ class FunWithLogicGates {
             this.components,
             null,
             this.removeComponentCallback.bind(this),
-            this.editRomCallback.bind(this)
+            this.editRomCallback.bind(this),
+            { orientation: this.orientation }
         ) ;
 
         this.logger.debug(`Initializing toolbar below element '#${id}'`) ;
@@ -83,6 +88,13 @@ class FunWithLogicGates {
 
         this.mainMenuBtn = document.getElementById("main-menu--button") ;
         this.mainMenuBtn.addEventListener("click", this.displayMainMenu.bind(this)) ;
+    }
+
+    changeOrientation(orientation) {
+        this.logger.debug("Change orientation called: orientation = " + orientation) ;
+        this.orientation = orientation ;
+        this.currentComponent.changeCanvasDimensions(orientation) ;
+        this.mainMenu.changeCanvasDimensions(orientation) ;
     }
 
     displayMainMenu() {
