@@ -56,7 +56,7 @@ class Component extends ComponentInterface {
             this.canvas.getContext("2d"),
             this.metadata.canvas.width,
             this.metadata.canvas.height,
-            logLvl
+            { logLvl, darkMode: options.darkMode }
         ) ;
 
         this.indices.items.index = 0 ;

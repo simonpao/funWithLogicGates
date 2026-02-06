@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fun with Logic Gates</title>
+    <script src="fun.js"></script>
+    <script src="classes/Coordinates.js"></script>
+    <script src="classes/Item.js"></script>
+    <script src="classes/IO.js"></script>
+    <script src="classes/ComponentInterface.js"></script>
+    <script src="classes/And.js"></script>
+    <script src="classes/Not.js"></script>
+    <script src="classes/Or.js"></script>
+    <script src="classes/Rectangle.js"></script>
+    <script src="classes/ReadOnlyMemory.js"></script>
+    <script src="classes/SevenSegmentDisplay.js"></script>
+    <script src="classes/Connection.js"></script>
+    <script src="classes/Drawer.js"></script>
+    <script src="classes/Input.js"></script>
+    <script src="classes/Output.js"></script>
+    <script src="classes/Storage.js"></script>
+    <script src="classes/Component.js"></script>
+    <script src="classes/AbstractedComponentSpec.js"></script>
+    <script src="classes/AbstractedComponent.js"></script>
+    <script src="classes/MainMenu.js"></script>
+    <script src="classes/Button.js"></script>
+    <script src="classes/Logger.js"></script>
+    <script src="classes/Toolbar.js"></script>
+    <script src="classes/ToastMessage.js"></script>
+    <link rel="stylesheet" href="fun.css" />
+    <style>
+        body { overflow:hidden; text-align:center; background-color: #333333; margin: 0; }
+        #fun-with-logic-gates--nav { margin: auto ; }
+        #full-screen--button,
+        #add-input--input,
+        #add-output--input {
+            display:none;
+        }
+
+        #context-menu.touch-menu {
+            top: 15vh;
+            bottom: 15vh;
+            left: 15vw;
+            right: 15vw;
+        }
+
+        @media (max-width: 500px) {
+            #canvas-container--div .fun-with-logic-gates--canvas {
+                transform: rotate(90deg);
+                max-width: 100vh;
+                max-height: 100vw;
+                margin-right: unset;
+                margin-bottom: 25vw;
+            }
+        }
+
+        #canvas-container--div .fun-with-logic-gates--canvas.main-menu {
+            margin-right: unset ;
+            margin-bottom: unset ;
+        }
+
+        #canvas-container--div {
+            height: 100vh ;
+            display: flex;
+            align-content: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        #canvas-container--div #fun-with-logic-gates--nav {
+            position: fixed;
+            bottom: 0;
+            width: 100vw !important;
+            max-width: unset !important;
+            margin: 0 -8px;
+            padding: 25px 0 0;
+            border: none;
+            background: linear-gradient(0deg, #888, #333333);
+            z-index: 2;
+        }
+
+        @media (orientation: landscape) {
+            @media (max-width: 500px) {
+                #canvas-container--div .fun-with-logic-gates--canvas {
+                    transform: rotate(0deg);
+                }
+            }
+
+            #canvas-container--div .fun-with-logic-gates--canvas {
+                rotate: 0deg;
+                max-width: 85vw;
+                max-height: 100vh;
+                margin-right: 15vw;
+                margin-bottom: unset;
+            }
+
+            #canvas-container--div #fun-with-logic-gates--nav {
+                right: 0;
+                top: 0;
+                bottom: 0;
+                height: 100vh !important;
+                width: 15vw !important;
+                background: linear-gradient(270deg, #888, transparent);
+                text-align: center;
+                padding: 0;
+                display: flex;
+                align-content: center;
+                justify-content: center;
+                flex-direction: column;
+            }
+
+            #canvas-container--div #fun-with-logic-gates--nav > * {
+                max-height: 50vh;
+            }
+
+            #canvas-container--div #fun-with-logic-gates--nav #other-controls--div,
+            #canvas-container--div #fun-with-logic-gates--nav #components--div {
+                white-space: normal;
+                overflow-x: hidden;
+                margin: 0 0 5px 0;
+                display: flex;
+                flex-direction: column;
+                border-bottom: 2px solid var(--border-color);
+            }
+
+            #canvas-container--div #fun-with-logic-gates--nav #components--div input[type="color"] {
+                cursor: pointer ;
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                appearance: none;
+                background-color: transparent;
+                width: auto;
+                border: none;
+                translate: 0 10px;
+                margin: -5px 0 22px -5px;
+                padding: 0 2px 0 0;
+            }
+
+            #canvas-container--div #fun-with-logic-gates--nav #components--div input[type="color"]::-webkit-color-swatch {
+                border-radius: 0;
+                border: 2px solid var(--border-color);
+                height: 40px;
+                margin: 0;
+                padding: 0;
+            }
+
+            #canvas-container--div #fun-with-logic-gates--nav #components--div input[type="color"]::-moz-color-swatch {
+                border-radius: 0;
+                border: 2px solid var(--border-color);
+                height: 40px;
+                margin: 0;
+                padding: 0;
+            }
+
+            #canvas-container--div #fun-with-logic-gates--nav input[type="text"] {
+                width: unset ;
+            }
+        }
+    </style>
+</head>
+<body>
+<canvas id="canvas" width="1000" height="600"></canvas>
+<script type="application/javascript">
+    // Attempt to replace JavaScript logger with AndroidLogger
+    let logger, androidLogger ;
+    try {
+        if(AndroidLogger) {
+            androidLogger = {
+                log:   (...message) => AndroidLogger.info(  `INFO : ${message.join(" ")}`),
+                debug: (...message) => AndroidLogger.debug(`DEBUG : ${message.join(" ")}`),
+                info:  (...message) => AndroidLogger.info(  `INFO : ${message.join(" ")}`),
+                warn:  (...message) => AndroidLogger.warn(  `WARN : ${message.join(" ")}`),
+                error: (...message) => AndroidLogger.error(`ERROR : ${message.join(" ")}`),
+                panic: (...message) => AndroidLogger.panic(`PANIC : ${message.join(" ")}`)
+            };
+            logger = androidLogger;
+            console.log = androidLogger.log ;
+            console.error = androidLogger.error ;
+        }
+    } catch(e) {
+        logger = new Logger(Logger.logLvl.DEBUG) ;
+        logger.warn(`AndroidLogger NOT added to WebView; using standard console loggers: ${e}`) ;
+    }
+
+    // Attempt to load AndroidLocalStorage functions
+    let androidLocalStorage ;
+    try {
+        androidLocalStorage = AndroidLocalStorage;
+        logger.info('AndroidLocalStorage added to WebView') ;
+    } catch(e) {
+        androidLocalStorage = {
+            setItem: (key, lastUpd, numComps, state) => { logger.info( `androidLocalStorage.setItem(${key}, ${lastUpd}, ${numComps}, ${state})` ) },
+            getItem: (key) => { logger.info( `androidLocalStorage.getItem(${key})` ) ; return {} ; },
+            getAllItems: () => { logger.info( `androidLocalStorage.getAllItems()` ) ; return [] ; },
+            removeItem: (key) => { logger.info( `androidLocalStorage.removeItem(${key})` ) },
+            clear: () => { logger.info( `androidLocalStorage.clear()` ) }
+        }
+        logger.warn(`AndroidLocalStorage NOT added to WebView; using NOOPs: ${e}`) ;
+    }
+
+    // Determine initial orientation
+    let isPortrait = window.matchMedia("(orientation: portrait)").matches ;
+    let is500pxOrLess = window.matchMedia("(max-width: 500px)").matches ;
+
+    let funWithLogicGates = new FunWithLogicGates("canvas", Logger.logLvl.DEBUG, {
+        orientation: isPortrait && is500pxOrLess ?
+            Coordinates.orientation.PORTRAIT : Coordinates.orientation.LANDSCAPE
+    }) ;
+
+    // Try to load all saves from AndroidLocalStorage
+    logger.debug("Trying to load all saves from AndroidLocalStorage") ;
+    let saves = androidLocalStorage.getAllItems() ;
+    saves = JSON.parse(saves) ;
+    for(let i in saves) {
+        if(!saves[i].name) continue ;
+        logger.info(`Saves loaded, adding ${saves[i].name} to local storage.`) ;
+        funWithLogicGates.savesList[saves[i].name] = {
+            lastUpdated: saves[i].last_updated,
+            numberOfComponents: saves[i].num_components
+        }
+        localStorage.setItem( "fun-with-logic-gates--state--save-" + saves[i].name, saves[i].state ) ;
+    }
+
+    // Listen to saveGame event listener to know when user saves the game
+    document.getElementById("canvas").addEventListener("saveGame", e => {
+        logger.info(`Save detected, attempting to save ${e.saveName} to Android DB`) ;
+        androidLocalStorage.setItem(e.saveName, e.lastUpdated, e.numberOfComponents.toString(), localStorage.getItem( e.saveId )) ;
+    }) ;
+    document.getElementById("canvas").addEventListener("deleteSaveGame", e => {
+        logger.info(`Save deletion detected, attempting to delete save ${e.saveName} to Android DB`) ;
+        androidLocalStorage.removeItem(e.saveName) ;
+    }) ;
+
+    // Listen to orientation changes to update funWithLogicGates
+    window.addEventListener("orientationchange", (evt) => {
+        let isPortrait = !!evt.target.screen.orientation.type.match(new RegExp("portrait")) ;
+        let is500pxOrLess = evt.target.screen.availWidth <= 500
+        funWithLogicGates.changeOrientation(
+            isPortrait && is500pxOrLess ?
+                Coordinates.orientation.PORTRAIT : Coordinates.orientation.LANDSCAPE
+        ) ;
+    }, true);
+</script>
+</body>
+</html>

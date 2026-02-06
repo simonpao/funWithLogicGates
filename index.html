@@ -25,6 +25,7 @@
     <script src="classes/AbstractedComponent.js"></script>
     <script src="classes/MainMenu.js"></script>
     <script src="classes/Button.js"></script>
+    <script src="classes/SettingsButton.js"></script>
     <script src="classes/Logger.js"></script>
     <script src="classes/Toolbar.js"></script>
     <script src="classes/ToastMessage.js"></script>
@@ -48,7 +49,10 @@
 
     // Listen to saveGame event listener to know when user saves the game
     document.getElementById("canvas").addEventListener("saveGame", e => {
-        logger.debug(e) ;
+        logger.debug("saveGame", e) ;
+    }) ;
+    document.getElementById("canvas").addEventListener("deleteSaveGame", e => {
+        logger.debug("deleteSaveGame", e) ;
     }) ;
 </script>
 </body>

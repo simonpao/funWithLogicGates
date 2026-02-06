@@ -38,8 +38,10 @@ class FunWithLogicGates {
             startFn: this.initCanvas.bind(this, id, logLvl),
             newFn: this.startNew.bind(this),
             saveFn: this.saveGame.bind(this),
-            loadFn: this.loadGame.bind(this)
-        }, { orientation: this.orientation }) ;
+            loadFn: this.loadGame.bind(this),
+            deleteFn: this.deleteSave.bind(this),
+            themeFn: this.setTheme.bind(this)
+        }, { orientation: this.orientation, darkMode: this.darkMode }) ;
 
         if(!this.activeSession) {
             this.logger.debug(`Initializing main menu on element '#${id}'`) ;
@@ -62,7 +64,7 @@ class FunWithLogicGates {
             null,
             this.removeComponentCallback.bind(this),
             this.editRomCallback.bind(this),
-            { orientation: this.orientation }
+            { orientation: this.orientation, darkMode: this.darkMode }
         ) ;
 
         this.logger.debug(`Initializing toolbar below element '#${id}'`) ;
@@ -77,6 +79,28 @@ class FunWithLogicGates {
 
         this.initButtons() ;
         this.enterFullScreen(null, true) ;
+    }
+
+    setTheme(darkMode) {
+        this.darkMode = darkMode ;
+        this.updateState() ;
+    }
+
+    deleteSave(name) {
+        name = name.toLowerCase() ;
+
+        // Dispatch a delete event so other applications can handle save delete if they wish
+        this.logger.debug("dispatching delete save event") ;
+        let delSaveEvt = new Event("deleteSaveGame") ;
+        delSaveEvt.saveName = name ;
+        delSaveEvt.saveId = "fun-with-logic-gates--state--save-" + name ;
+        delSaveEvt.lastUpdated = this.savesList[name].lastUpdated ;
+        delSaveEvt.numberOfComponents = this.savesList[name].numberOfComponents ;
+        this.canvas.dispatchEvent(delSaveEvt) ;
+
+        delete this.savesList[name] ;
+        this.storage.deleteObject("save-" + name) ;
+        this.updateState() ;
     }
 
     initButtons() {
@@ -333,6 +357,7 @@ class FunWithLogicGates {
     updateState() {
         this.storage.setObject({
             activeSession: this.activeSession,
+            darkMode: this.darkMode,
             savesList: this.savesList,
             components: this.components,
             currentSave: this.currentSave
@@ -342,6 +367,7 @@ class FunWithLogicGates {
     loadState() {
         let state = this.storage.getObject() ;
         this.activeSession = state.activeSession ;
+        this.darkMode = state.darkMode || false ;
         this.savesList = typeof state.savesList === "undefined" ? {} : state.savesList ;
         this.currentSave = typeof state.currentSave === "undefined" ? "" : state.currentSave ;
 

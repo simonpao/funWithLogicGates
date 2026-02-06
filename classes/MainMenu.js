@@ -76,12 +76,23 @@ class MainMenu {
             this.width,
             "#FF9900",
             async () => {
-                let name = await this.promptForLoadName() ;
-                if(!name) return ;
-                this.currentSave = name ;
-                this.removeMainMenu();
-                if(callbacks.loadFn(name))
-                    callbacks.startFn(this.currentSave);
+                let result = await this.promptForLoadName() ;
+                switch(result.action) {
+                    case 'close':
+                        return ;
+                    case 'load':
+                        this.currentSave = result.name ;
+                        this.removeMainMenu();
+                        if(callbacks.loadFn(result.name))
+                            callbacks.startFn(this.currentSave);
+                        break ;
+                    case 'delete':
+                        if (await new ToastMessage(`Are you sure you want to delete the save: ${result.name}?`).confirm()) {
+                            callbacks.deleteFn(result.name);
+                            new ToastMessage(`Save named "${result.name}" deleted.`).show()
+                        }
+                        this.buttons.load.execute() ;
+                }
             }
         );
         this.buttons.save = new Button(
@@ -98,6 +109,22 @@ class MainMenu {
                 this.currentSave = name ;
                 callbacks.saveFn(name) ;
             }
+        );
+        this.buttons.darkMode = new SettingsButton(
+            options.darkMode ? "Light Mode" : "Dark Mode",
+            100,
+            this.height-50,
+            125,
+            options.darkMode ? "white" : "#1e1f22",
+            () => {
+                options.darkMode = !options.darkMode;
+                callbacks.themeFn(options.darkMode);
+                this.buttons.darkMode.text = options.darkMode ? "Light Mode" : "Dark Mode";
+                this.buttons.darkMode.color = options.darkMode ? "white" : "#1e1f22";
+                this.buttons.darkMode.inverseColor = options.darkMode ? "#1e1f22" : "white" ;
+                this.buttons.darkMode.render(this.canvas2dCtx);
+            },
+            { inverseColor: options.darkMode ? "#1e1f22" : "white" }
         );
     }
 
@@ -179,6 +206,13 @@ class MainMenu {
 
         let loadArea = document.getElementById("load-state-scroll--div") ;
         for(let name in this.savesList) {
+            let deleteBtn = document.createElement( "button" );
+            deleteBtn.className = "delete-state--button" ;
+            deleteBtn.dataset.name = name ;
+            deleteBtn.innerText = '➖' ;
+            deleteBtn.title = 'Delete this save' ;
+            deleteBtn.style.fontWeight = 'bold' ;
+
             let loadBtn = document.createElement("button") ;
             loadBtn.className = "load-state--button" ;
             loadBtn.dataset.name = name ;
@@ -187,6 +221,7 @@ class MainMenu {
             let numComp = this.savesList[name].numberOfComponents ;
             let comp = numComp === 1 ? "Component" : "Components" ;
             loadBtn.innerText = `${name} [${date} ${time} - ${numComp} ${comp} Created]` ;
+            loadArea.appendChild(deleteBtn) ;
             loadArea.appendChild(loadBtn) ;
         }
 
@@ -197,11 +232,12 @@ class MainMenu {
         return new Promise((resolve) => {
             let close  = document.querySelector(`#load-state--div .load-state-close--span`) ;
             let load  = document.querySelectorAll(`#load-state--div .load-state--button`) ;
+            let delBtn  = document.querySelectorAll(`#load-state--div .delete-state--button`) ;
 
             close.addEventListener("click", () => {
                 this.placeholder.removeChild(mask) ;
                 this.placeholder.removeChild(loadDiv) ;
-                resolve(false) ;
+                resolve({ action: 'close', name: false }) ;
             }) ;
 
             for(let i in load) if(load.hasOwnProperty(i)) {
@@ -209,8 +245,16 @@ class MainMenu {
                     let name = e.currentTarget.dataset.name ;
                     this.placeholder.removeChild(mask) ;
                     this.placeholder.removeChild(loadDiv) ;
-                    resolve(name) ;
-                })
+                    resolve( { action: 'load', name } ) ;
+                }) ;
+            }
+            for(let i in delBtn) if(delBtn.hasOwnProperty(i)) {
+                delBtn[i].addEventListener("click", e => {
+                    let name = e.currentTarget.dataset.name ;
+                    this.placeholder.removeChild(mask) ;
+                    this.placeholder.removeChild(loadDiv) ;
+                    resolve({ action: 'delete', name }) ;
+                }) ;
             }
         }) ;
     }
@@ -285,8 +329,8 @@ class MainMenu {
 
     getActiveButtons() {
         return this.activeSession ?
-            [this.buttons.continue, this.buttons.new, this.buttons.load, this.buttons.save] :
-            [this.buttons.start, this.buttons.load] ;
+            [this.buttons.continue, this.buttons.new, this.buttons.load, this.buttons.save, this.buttons.darkMode] :
+            [this.buttons.start, this.buttons.load, this.buttons.darkMode] ;
     }
 
     removeMainMenu() {

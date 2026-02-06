@@ -1,12 +1,12 @@
 # Fun with Logic Gates
 
-<img src="/img/mainmenu.png" alt="Main-Menu" width="750px" />
+<img src="/img/FWLG_Menu_2.png" alt="Main-Menu" width="750px" />
 
 Use AND, OR, and NOT logic gates to create logic circuits. These gates are fundamental 
 building blocks of digital circuits, and they are used to perform logical operations 
 on binary inputs (inputs that can take on the value of either 0 or 1).
 
-<img src="/img/nor.png" alt="NOR" width="750px" />
+<img src="/img/FWLG_NOR_2.png" alt="NOR" width="750px" />
 <img src="/img/srlatch.png" alt="SR-Latch" width="750px" />
 <img src="/img/4add_reg.png" alt="SR-Latch" width="750px" />
 
