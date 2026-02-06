@@ -6,10 +6,17 @@ class Drawer {
             b: 80
         }
     }
+    darkMode = false ;
     backgroundColor = "white" ;
+    foregroundColor = "black" ;
+    textColor = "white"
 
-    constructor(canvas2dCtx, w, h, logLvl = Logger.logLvl.INFO) {
-        this.logger = new Logger(logLvl, "Drawer") ;
+    constructor(canvas2dCtx, w, h, options = { logLvl: Logger.logLvl.INFO }) {
+        this.logger = new Logger(options.logLvl, "Drawer") ;
+
+        this.darkMode = options.darkMode || false ;
+        this.backgroundColor = this.darkMode ? "#1e1f22" : "white" ;
+        this.foregroundColor = this.darkMode ? "white" : "black" ;
 
         this.canvas2dCtx = canvas2dCtx ;
         this.canvasWidth = w ;
@@ -23,7 +30,7 @@ class Drawer {
         this.canvas2dCtx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
 
         // Inputs Boundary
-        this.canvas2dCtx.strokeStyle = "black" ;
+        this.canvas2dCtx.strokeStyle = this.foregroundColor ;
         this.canvas2dCtx.lineWidth = "1" ;
         this.canvas2dCtx.beginPath();
         this.canvas2dCtx.moveTo(Drawer.dim.io.b, 0) ;
@@ -31,7 +38,7 @@ class Drawer {
         this.canvas2dCtx.stroke() ;
 
         // Outputs Boundary
-        this.canvas2dCtx.strokeStyle = "black" ;
+        this.canvas2dCtx.strokeStyle = this.foregroundColor ;
         this.canvas2dCtx.lineWidth = "1" ;
         this.canvas2dCtx.beginPath();
         this.canvas2dCtx.moveTo(this.canvasWidth-Drawer.dim.io.b, 0) ;
@@ -45,7 +52,7 @@ class Drawer {
 
         if(label !== "") {
             this.canvas2dCtx.font = "16px Monospace";
-            this.canvas2dCtx.fillStyle = "white";
+            this.canvas2dCtx.fillStyle = this.textColor;
             this.canvas2dCtx.fillText(label, x+15, y+31);
         }
     }
@@ -61,7 +68,7 @@ class Drawer {
         this.canvas2dCtx.fill();
 
         // Input 1
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath();
         this.canvas2dCtx.moveTo(x, y+(h/4)) ;
@@ -69,7 +76,7 @@ class Drawer {
         this.canvas2dCtx.stroke() ;
 
         // Input 2
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath() ;
         this.canvas2dCtx.moveTo(x, (y+h)-(h/4)) ;
@@ -77,7 +84,7 @@ class Drawer {
         this.canvas2dCtx.stroke() ;
 
         // Output 1
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath() ;
         this.canvas2dCtx.moveTo(x+w, y+(h/2)) ;
@@ -86,7 +93,7 @@ class Drawer {
 
         // Label
         this.canvas2dCtx.font = "16px Monospace";
-        this.canvas2dCtx.fillStyle = "white";
+        this.canvas2dCtx.fillStyle = this.textColor;
         this.canvas2dCtx.fillText("AND", x+20, y+30);
     }
 
@@ -106,7 +113,7 @@ class Drawer {
         this.canvas2dCtx.fill();
 
         // Input 1
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath();
         this.canvas2dCtx.moveTo(x, y+(h/4)) ;
@@ -114,7 +121,7 @@ class Drawer {
         this.canvas2dCtx.stroke() ;
 
         // Input 2
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath() ;
         this.canvas2dCtx.moveTo(x, (y+h)-(h/4)) ;
@@ -122,7 +129,7 @@ class Drawer {
         this.canvas2dCtx.stroke() ;
 
         // Output 1
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath() ;
         this.canvas2dCtx.moveTo(x+w, y+(h/2)) ;
@@ -131,7 +138,7 @@ class Drawer {
 
         // Label
         this.canvas2dCtx.font = "16px Monospace";
-        this.canvas2dCtx.fillStyle = "white";
+        this.canvas2dCtx.fillStyle = this.textColor;
         this.canvas2dCtx.fillText("NAND", x+15, y+30);
     }
 
@@ -146,7 +153,7 @@ class Drawer {
         this.canvas2dCtx.fill();
 
         // Input 1
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath();
         this.canvas2dCtx.moveTo(x+10, y+(h/4)) ;
@@ -154,7 +161,7 @@ class Drawer {
         this.canvas2dCtx.stroke() ;
 
         // Input 2
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath();
         this.canvas2dCtx.moveTo(x+10, (y+h)-(h/4)) ;
@@ -162,7 +169,7 @@ class Drawer {
         this.canvas2dCtx.stroke() ;
 
         // Output 1
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath() ;
         this.canvas2dCtx.moveTo(x+w, y+(h/2)) ;
@@ -171,7 +178,7 @@ class Drawer {
 
         // Label
         this.canvas2dCtx.font = "16px Monospace";
-        this.canvas2dCtx.fillStyle = "white";
+        this.canvas2dCtx.fillStyle = this.textColor;
         this.canvas2dCtx.fillText("OR", x+30, y+30);
     }
 
@@ -191,7 +198,7 @@ class Drawer {
         this.canvas2dCtx.fill();
 
         // Input 1
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath();
         this.canvas2dCtx.moveTo(x-2, y+(h/4)) ;
@@ -199,7 +206,7 @@ class Drawer {
         this.canvas2dCtx.stroke() ;
 
         // Input 2
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath();
         this.canvas2dCtx.moveTo(x-2, (y+h)-(h/4)) ;
@@ -207,7 +214,7 @@ class Drawer {
         this.canvas2dCtx.stroke() ;
 
         // Output 1
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath() ;
         this.canvas2dCtx.moveTo(x+w, y+(h/2)) ;
@@ -216,7 +223,7 @@ class Drawer {
 
         // Label
         this.canvas2dCtx.font = "16px Monospace";
-        this.canvas2dCtx.fillStyle = "white";
+        this.canvas2dCtx.fillStyle = this.textColor;
         this.canvas2dCtx.fillText("NOR", x+20, y+30);
     }
 
@@ -231,7 +238,7 @@ class Drawer {
         this.canvas2dCtx.fill();
 
         // Input 1
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath();
         this.canvas2dCtx.moveTo(x, y+(h/2)) ;
@@ -239,7 +246,7 @@ class Drawer {
         this.canvas2dCtx.stroke() ;
 
         // Output 1
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath();
         this.canvas2dCtx.moveTo(x+w, y+(h/2)) ;
@@ -248,7 +255,7 @@ class Drawer {
 
         // Label
         this.canvas2dCtx.font = "16px Monospace";
-        this.canvas2dCtx.fillStyle = "white";
+        this.canvas2dCtx.fillStyle = this.textColor;
         this.canvas2dCtx.fillText("BUF", x+20, y+30);
     }
 
@@ -263,7 +270,7 @@ class Drawer {
         this.canvas2dCtx.fill();
 
         // Input 1
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath();
         this.canvas2dCtx.moveTo(x, y+(h/4)) ;
@@ -271,7 +278,7 @@ class Drawer {
         this.canvas2dCtx.stroke() ;
 
         // Input 2
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath();
         this.canvas2dCtx.moveTo(x, (y+h)-(h/4)) ;
@@ -287,7 +294,7 @@ class Drawer {
         this.canvas2dCtx.stroke() ;
 
         // Output 1
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath() ;
         this.canvas2dCtx.moveTo(x+w, y+(h/2)) ;
@@ -296,7 +303,7 @@ class Drawer {
 
         // Label
         this.canvas2dCtx.font = "16px Monospace";
-        this.canvas2dCtx.fillStyle = "white";
+        this.canvas2dCtx.fillStyle = this.textColor;
         this.canvas2dCtx.fillText("XOR", x+28, y+30);
     }
 
@@ -316,7 +323,7 @@ class Drawer {
         this.canvas2dCtx.fill();
 
         // Input 1
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath();
         this.canvas2dCtx.moveTo(x-2, y+(h/4)) ;
@@ -324,7 +331,7 @@ class Drawer {
         this.canvas2dCtx.stroke() ;
 
         // Input 2
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath();
         this.canvas2dCtx.moveTo(x-2, (y+h)-(h/4)) ;
@@ -340,7 +347,7 @@ class Drawer {
         this.canvas2dCtx.stroke() ;
 
         // Output 1
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath() ;
         this.canvas2dCtx.moveTo(x+w, y+(h/2)) ;
@@ -349,7 +356,7 @@ class Drawer {
 
         // Label
         this.canvas2dCtx.font = "16px Monospace";
-        this.canvas2dCtx.fillStyle = "white";
+        this.canvas2dCtx.fillStyle = this.textColor;
         this.canvas2dCtx.fillText("XNOR", x+18, y+30);
     }
 
@@ -369,7 +376,7 @@ class Drawer {
         this.canvas2dCtx.fill();
 
         // Input 1
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath();
         this.canvas2dCtx.moveTo(x, y+(h/2)) ;
@@ -377,7 +384,7 @@ class Drawer {
         this.canvas2dCtx.stroke() ;
 
         // Output 1
-        this.canvas2dCtx.strokeStyle = "black";
+        this.canvas2dCtx.strokeStyle = this.foregroundColor;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath();
         this.canvas2dCtx.moveTo(x+w, y+(h/2)) ;
@@ -386,7 +393,7 @@ class Drawer {
 
         // Label
         this.canvas2dCtx.font = "16px Monospace";
-        this.canvas2dCtx.fillStyle = "white";
+        this.canvas2dCtx.fillStyle = this.textColor;
         this.canvas2dCtx.fillText("NOT", x+13, y+30);
     }
 
@@ -399,7 +406,7 @@ class Drawer {
         let marginY = h/(componentSpec.numberOfInputs+1) ;
         for(let i = 0; i < componentSpec.numberOfInputs; i++) {
             let posY = y+(marginY*(i+1))+5 ;
-            this.canvas2dCtx.strokeStyle = "black";
+            this.canvas2dCtx.strokeStyle = this.foregroundColor;
             this.canvas2dCtx.lineWidth = "5" ;
             this.canvas2dCtx.beginPath();
             this.canvas2dCtx.moveTo(x, posY) ;
@@ -408,7 +415,7 @@ class Drawer {
 
             let label = componentSpec.inputs[ids[i]].label ;
             this.canvas2dCtx.font = "14px Monospace";
-            this.canvas2dCtx.fillStyle = "white";
+            this.canvas2dCtx.fillStyle = this.textColor;
             this.canvas2dCtx.fillText(label, x+15, posY+5);
         }
 
@@ -417,7 +424,7 @@ class Drawer {
         marginY = h/(componentSpec.numberOfOutputs+1) ;
         for(let i = 0; i < componentSpec.numberOfOutputs; i++) {
             let posY = y+(marginY*(i+1))+5 ;
-            this.canvas2dCtx.strokeStyle = "black";
+            this.canvas2dCtx.strokeStyle = this.foregroundColor;
             this.canvas2dCtx.lineWidth = "5";
             this.canvas2dCtx.beginPath();
             this.canvas2dCtx.moveTo(x + w, posY);
@@ -426,12 +433,12 @@ class Drawer {
 
             let label = componentSpec.outputs[ids[i]].label ;
             this.canvas2dCtx.font = "14px Monospace";
-            this.canvas2dCtx.fillStyle = "white";
+            this.canvas2dCtx.fillStyle = this.textColor;
             this.canvas2dCtx.fillText(label, (x+w)-(label.length*8)-14, posY+5);
         }
 
         this.canvas2dCtx.font = "14px Monospace";
-        this.canvas2dCtx.fillStyle = "white";
+        this.canvas2dCtx.fillStyle = this.textColor;
         this.canvas2dCtx.fillText(name, (x+w/2)-(name.length*4), y+15);
     }
 
@@ -443,7 +450,7 @@ class Drawer {
         let marginY = h/(numIn+1) ;
         for(let i = 0; i < numIn; i++) {
             let posY = y+(marginY*(i+1))+5 ;
-            this.canvas2dCtx.strokeStyle = "black";
+            this.canvas2dCtx.strokeStyle = this.foregroundColor;
             this.canvas2dCtx.lineWidth = "5" ;
             this.canvas2dCtx.beginPath();
             this.canvas2dCtx.moveTo(x, posY) ;
@@ -451,7 +458,7 @@ class Drawer {
             this.canvas2dCtx.stroke() ;
 
             this.canvas2dCtx.font = "14px Monospace";
-            this.canvas2dCtx.fillStyle = "white";
+            this.canvas2dCtx.fillStyle = this.textColor;
             this.canvas2dCtx.fillText(inLabels[i], x+15, posY+5);
         }
 
@@ -459,7 +466,7 @@ class Drawer {
         marginY = h/(numOut+1) ;
         for(let i = 0; i < numOut; i++) {
             let posY = y+(marginY*(i+1))+5 ;
-            this.canvas2dCtx.strokeStyle = "black";
+            this.canvas2dCtx.strokeStyle = this.foregroundColor;
             this.canvas2dCtx.lineWidth = "5";
             this.canvas2dCtx.beginPath();
             this.canvas2dCtx.moveTo(x + w, posY);
@@ -467,18 +474,20 @@ class Drawer {
             this.canvas2dCtx.stroke();
 
             this.canvas2dCtx.font = "14px Monospace";
-            this.canvas2dCtx.fillStyle = "white";
+            this.canvas2dCtx.fillStyle = this.textColor;
             this.canvas2dCtx.fillText(outLabels[i], (x+w)-(outLabels[i].length*8)-14, posY+5);
         }
 
         this.canvas2dCtx.font = "14px Monospace";
-        this.canvas2dCtx.fillStyle = "white";
+        this.canvas2dCtx.fillStyle = this.textColor;
         this.canvas2dCtx.fillText(name, (x+w/2)-(name.length*4), y+15);
     }
 
     fillSevenSegment(x, y, state) {
         const w = 100, h = 110, s = 7 ;
-        const black = "#333333", red = "#ff1111", gray = "#aeaeae" ;
+        const black = this.darkMode ? "#999999" : "#333333",
+              red = "#ff1111",
+              gray = this.darkMode ? "#333333" : "#aeaeae" ;
 
         this.canvas2dCtx.fillStyle = black;
         this.canvas2dCtx.fillRect(x+10, y, w-10, h);
@@ -559,7 +568,7 @@ class Drawer {
 
             let label = ids[i] ;
             this.canvas2dCtx.font = "14px Monospace";
-            this.canvas2dCtx.fillStyle = "white";
+            this.canvas2dCtx.fillStyle = this.textColor;
             this.canvas2dCtx.fillText(label, x+13, posY+3);
         }
 
@@ -574,14 +583,14 @@ class Drawer {
         let c = 1 ;
         for(let i in inputs) {
             // Circle
-            this.canvas2dCtx.fillStyle = inputs[i].state === 0 ? "black" : "red";
+            this.canvas2dCtx.fillStyle = inputs[i].state === 0 ? this.foregroundColor : "red";
             this.canvas2dCtx.beginPath() ;
             this.canvas2dCtx.arc(Drawer.dim.io.x, (spacer*c), Drawer.dim.io.r, 0, Math.PI * 2, false) ;
             this.canvas2dCtx.fill();
 
             // Label
             this.canvas2dCtx.font = "12px Monospace";
-            this.canvas2dCtx.fillStyle = "black";
+            this.canvas2dCtx.fillStyle = this.foregroundColor;
             this.canvas2dCtx.fillText(inputs[i].label, 5, (spacer*c)+5);
 
             inputs[i].x = 65 ;
@@ -616,14 +625,14 @@ class Drawer {
         let c = 1 ;
         for(let i in outputs) {
             // Circle
-            this.canvas2dCtx.fillStyle = outputs[i].state === 0 ? "black" : "red";
+            this.canvas2dCtx.fillStyle = outputs[i].state === 0 ? this.foregroundColor : "red";
             this.canvas2dCtx.beginPath() ;
             this.canvas2dCtx.arc(this.canvasWidth-Drawer.dim.io.x, (spacer*c), Drawer.dim.io.r, 0, Math.PI * 2, false) ;
             this.canvas2dCtx.fill();
 
             // Label
             this.canvas2dCtx.font = "12px Monospace";
-            this.canvas2dCtx.fillStyle = "black";
+            this.canvas2dCtx.fillStyle = this.foregroundColor;
             this.canvas2dCtx.fillText(outputs[i].label, this.canvasWidth-50, (spacer*c)+5);
 
             outputs[i].x = this.canvasWidth-Drawer.dim.io.x ;
@@ -638,7 +647,7 @@ class Drawer {
     }
 
     drawConnection(sx, sy, ex, ey, state = 0, anchors) {
-        this.canvas2dCtx.strokeStyle = state === 0 ? "black" : "red" ;
+        this.canvas2dCtx.strokeStyle = state === 0 ? this.foregroundColor : "red" ;
         this.canvas2dCtx.lineWidth = "5" ;
         this.canvas2dCtx.beginPath();
         this.canvas2dCtx.moveTo(sx, sy) ;

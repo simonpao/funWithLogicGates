@@ -28,6 +28,18 @@ class Storage {
         }
     }
 
+    deleteObject(name) {
+        let key = typeof name === "undefined" ? `fun-with-logic-gates--${this.key}` : `fun-with-logic-gates--${this.key}--${name}` ;
+        try {
+            localStorage.removeItem( key ) ;
+            this.#setLastUpdated() ;
+            return true ;
+        } catch ( e ) {
+            console.error(e) ;
+            return false ;
+        }
+    }
+
     #setLastUpdated() {
         try {
             let value = new Date().getTime().toString() ;
