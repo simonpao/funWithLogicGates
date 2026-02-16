@@ -5,6 +5,7 @@ class ComponentInterface {
     inputs = {} ;
     outputs = {} ;
     connections = [] ;
+    connectionsByInput = new Map() ;  // Performance: O(1) lookup by input ID
 
     propagateStates(inputs, counter, before) {
         if(!counter) counter = { count: 0 } ;
@@ -50,6 +51,38 @@ class ComponentInterface {
     }
 
     getConnectionsByInput(input) {
-        return this.connections.filter(item => item.input.id === input) ;
+        // Performance: O(1) Map lookup instead of O(n) array filter
+        return this.connectionsByInput.get(input) || [] ;
+    }
+
+    addConnectionToIndex(connection) {
+        const inputId = connection.input.id || connection.input ;
+        if(!this.connectionsByInput.has(inputId)) {
+            this.connectionsByInput.set(inputId, []) ;
+        }
+        this.connectionsByInput.get(inputId).push(connection) ;
+    }
+
+    removeConnectionFromIndex(connection) {
+        const inputId = connection.input.id || connection.input ;
+        if(this.connectionsByInput.has(inputId)) {
+            const connections = this.connectionsByInput.get(inputId) ;
+            const index = connections.indexOf(connection) ;
+            if(index > -1) {
+                connections.splice(index, 1) ;
+            }
+            if(connections.length === 0) {
+                this.connectionsByInput.delete(inputId) ;
+            }
+        }
+    }
+
+    rebuildConnectionIndex() {
+        this.connectionsByInput.clear() ;
+        // Handle both array and object (from for...in deserialization)
+        for(let key in this.connections) {
+            const conn = this.connections[key] ;
+            this.addConnectionToIndex(conn) ;
+        }
     }
 }

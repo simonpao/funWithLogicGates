@@ -120,6 +120,9 @@ class Component extends ComponentInterface {
         this.indices.outputs.index = Object.keys(spec.outputs).length ;
         this.indices.connections.index = spec.connections.length ;
 
+        // Rebuild connection index for fast lookups
+        this.rebuildConnectionIndex() ;
+
         let start = new Date().getTime() ;
         let counter = { count: 0 } ;
         this.propagateStates(this.inputs, counter) ;
@@ -142,7 +145,7 @@ class Component extends ComponentInterface {
             return ;
         }
 
-        if(numIn > 8) {
+        if(numIn > 12) {
             if(!await new ToastMessage(
                 `Calculating a truth table for ${combinations} input combinations could take a very long time ` +
                 `and may cause your browser to hang, are you sure you want to continue?`, ToastMessage.ERROR
@@ -167,50 +170,57 @@ class Component extends ComponentInterface {
         return new Promise((resolve) => {
             let truthTable = document.createElement("div") ;
             truthTable.id = 'truth-table--div' ;
-            let html = "<div class='truth-table-scroll--div'><table><thead><tr>" ;
+            
+            // Build HTML using array for better performance
+            let htmlParts = ["<div class='truth-table-scroll--div'><table><thead><tr>"] ;
             let header = "" ;
 
             for(let i in inIds) {
-                html += `<th class="truth-table-in--th">${this.inputs[inIds[i]].label}</th>` ;
+                htmlParts.push(`<th class="truth-table-in--th">${this.inputs[inIds[i]].label}</th>`) ;
                 header += ` | ${this.inputs[inIds[i]].label}` ;
             }
             for(let i in outIds) {
-                html += `<th class="truth-table-out--th">${this.outputs[outIds[i]].label}</th>` ;
+                htmlParts.push(`<th class="truth-table-out--th">${this.outputs[outIds[i]].label}</th>`) ;
                 header += ` | ${this.outputs[outIds[i]].label}` ;
             }
-            html += "</tr></thead><tbody>" ;
+            htmlParts.push("</tr></thead><tbody>") ;
             header += " |" ;
             this.logger.info(" ".padEnd(header.length, "-")) ;
             this.logger.info(header) ;
             this.logger.info(" ".padEnd(header.length, "-")) ;
 
             for(let i = 0; i < combinations; i++) {
-                html += "<tr>" ;
+                htmlParts.push("<tr>") ;
                 let row = "" ;
                 let binary = (i >>> 0).toString(2).padStart(numIn, '0').split("") ;
 
+                // Set all input states first, then propagate once
                 let c = 0 ;
                 for(let n of binary) {
-                    html += `<td class="truth-table-in--td">${n}</td>` ;
+                    htmlParts.push(`<td class="truth-table-in--td">${n}</td>`) ;
                     row += ` | ${n.padStart(this.inputs[inIds[c]].label.length)}` ;
                     this.inputs[inIds[c]].state = parseInt(n) ;
-                    this.propagateState(this.inputs[inIds[c]]) ;
                     c ++ ;
+                }
+                
+                // Propagate all states after setting inputs (batch operation)
+                for(let c = 0; c < numIn; c++) {
+                    this.propagateState(this.inputs[inIds[c]]) ;
                 }
 
                 for(let n = 0; n < numOut; n++) {
-                    html += `<td class="truth-table-out--td">${this.outputs[outIds[n]].state}</td>` ;
+                    htmlParts.push(`<td class="truth-table-out--td">${this.outputs[outIds[n]].state}</td>`) ;
                     row += ` | ${(this.outputs[outIds[n]].state).toString().padStart(this.outputs[outIds[n]].label.length)}` ;
                 }
                 row += " |" ;
-                html += "</tr>" ;
+                htmlParts.push("</tr>") ;
 
                 this.logger.info(row) ;
-                this.redrawCanvas() ;
+                // REMOVED: redrawCanvas() - major performance bottleneck
             }
             this.logger.info(" ".padEnd(header.length, "-")) ;
-            html += "</tbody></table></div><button id='truth-table-close--button'>Close</button></div>" ;
-            truthTable.innerHTML = html ;
+            htmlParts.push("</tbody></table></div><button id='truth-table-close--button'>Close</button></div>") ;
+            truthTable.innerHTML = htmlParts.join('') ;
             resolve(truthTable) ;
         }) ;
     }
@@ -610,8 +620,9 @@ class Component extends ComponentInterface {
             let rectA = { x: newX, y: newY, w: thisItem.w, h: thisItem.h } ;
             let rectB = { x: items[i].x, y: items[i].y, w: items[i].w, h: items[i].h } ;
 
-            if((Math.abs(rectA.x - rectB.x) <= (Math.abs(rectA.w + rectB.w) / 2)) &&
-               (Math.abs(rectA.y - rectB.y) <= (Math.abs(rectA.h + rectB.h) / 2))) {
+            // AABB collision detection: check if rectangles actually overlap
+            if((rectA.x < rectB.x + rectB.w) && (rectA.x + rectA.w > rectB.x) &&
+               (rectA.y < rectB.y + rectB.h) && (rectA.y + rectA.h > rectB.y)) {
                 response.acx = rectA.x+rectA.w/2 ;
                 response.acy = rectA.y+rectA.h/2 ;
                 response.bcx = rectB.x+rectB.w/2 ;
@@ -1097,48 +1108,47 @@ class Component extends ComponentInterface {
         switch(type) {
             case "item":
                 let item = this.getItem(id) ;
+                // Collect IDs to remove
+                const idsToRemove = new Set() ;
                 for(let i in item.inputs) {
-                    let input = item.inputs[i] ;
-                    input.state = 0 ;
-                    for(let c = 0; c < this.connections.length; c++) {
-                        if(this.connections[c].input.id === input.id) {
-                            this.connections.splice(c, 1);
-                            this.indices.connections.index -- ;
-                            c -- ;
-                        }
-                    }
+                    item.inputs[i].state = 0 ;
+                    idsToRemove.add(item.inputs[i].id) ;
                 }
                 for(let o in item.outputs) {
-                    let output = item.outputs[o] ;
-                    output.state = 0 ;
-                    for(let c = 0; c < this.connections.length; c++) {
-                        if(this.connections[c].output.id === output.id) {
-                            this.connections.splice(c, 1);
-                            this.indices.connections.index -- ;
-                            c -- ;
-                        }
-                    }
+                    item.outputs[o].state = 0 ;
+                    idsToRemove.add(item.outputs[o].id) ;
                 }
+                // Remove from index and array
+                this.connections = this.connections.filter(conn => {
+                    if(idsToRemove.has(conn.input.id) || idsToRemove.has(conn.output.id)) {
+                        this.removeConnectionFromIndex(conn) ;
+                        this.indices.connections.index-- ;
+                        return false ;
+                    }
+                    return true ;
+                }) ;
                 item.determineInputState() ;
                 break ;
             case "input":
-                for(let c = 0; c < this.connections.length; c++) {
-                    if(this.connections[c].input.id === id) {
-                        this.connections[c].output.state = 0 ;
-                        this.connections.splice(c, 1);
-                        this.indices.connections.index -- ;
-                        c -- ;
+                this.connections = this.connections.filter(conn => {
+                    if(conn.input.id === id) {
+                        conn.output.state = 0 ;
+                        this.removeConnectionFromIndex(conn) ;
+                        this.indices.connections.index-- ;
+                        return false ;
                     }
-                }
+                    return true ;
+                }) ;
                 break ;
             case "output":
-                for(let c = 0; c < this.connections.length; c++) {
-                    if(this.connections[c].output.id === id) {
-                        this.connections.splice(c, 1);
-                        this.indices.connections.index -- ;
-                        c -- ;
+                this.connections = this.connections.filter(conn => {
+                    if(conn.output.id === id) {
+                        this.removeConnectionFromIndex(conn) ;
+                        this.indices.connections.index-- ;
+                        return false ;
                     }
-                }
+                    return true ;
+                }) ;
                 break ;
         }
         this.updateCanvasState() ;
@@ -1218,6 +1228,7 @@ class Component extends ComponentInterface {
         ) ;
         if(this.isConnectionToOutput(con.output.id)) return ;
         this.connections.push(con) ;
+        this.addConnectionToIndex(con) ;  // Maintain connection index
 
         let start = new Date().getTime() ;
         let counter = { count: 0 } ;
@@ -1360,6 +1371,10 @@ class Component extends ComponentInterface {
             this.indices.outputs.index = state.indices.outputs.index;
             this.indices.connections.index = state.indices.connections.index;
         }
+        
+        // Rebuild connection index for fast lookups
+        this.rebuildConnectionIndex() ;
+        
         let end = new Date().getTime() ;
         let total = end-start ;
         this.logger.debug(`setFromState took ${total}ms`) ;
@@ -1541,6 +1556,7 @@ class Component extends ComponentInterface {
         this.inputs = {} ;
         this.outputs = {} ;
         this.connections = [] ;
+        this.connectionsByInput.clear() ;  // Clear connection index
         this.indices.items.index = 0 ;
         this.indices.inputs.index = 0 ;
         this.indices.outputs.index = 0 ;

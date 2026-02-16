@@ -5,6 +5,8 @@ class AbstractedComponent extends Item {
         this.spec = new AbstractedComponentSpec(
             AbstractedComponentSpec.copyNewComponentSpec(spec, specs), name
         ) ;
+        // Rebuild connection index after deep copy (JSON serialization loses Map)
+        this.spec.rebuildConnectionIndex() ;
         this.name = name ;
 
         let inputKeys = Object.keys(this.spec.inputs) ;
