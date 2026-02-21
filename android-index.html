@@ -25,12 +25,13 @@
     <script src="classes/AbstractedComponent.js"></script>
     <script src="classes/MainMenu.js"></script>
     <script src="classes/Button.js"></script>
+    <script src="classes/SettingsButton.js"></script>
     <script src="classes/Logger.js"></script>
     <script src="classes/Toolbar.js"></script>
     <script src="classes/ToastMessage.js"></script>
     <link rel="stylesheet" href="fun.css" />
     <style>
-        body { overflow:hidden; text-align:center; background-color: #333333; margin: 0; }
+        html, body { overflow:hidden; text-align:center; background-color: #333333; margin: 0; }
         #fun-with-logic-gates--nav { margin: auto ; }
         #full-screen--button,
         #add-input--input,
@@ -90,9 +91,10 @@
             #canvas-container--div .fun-with-logic-gates--canvas {
                 rotate: 0deg;
                 max-width: 85vw;
-                max-height: 100vh;
+                max-height: 95vh;
                 margin-right: 15vw;
                 margin-bottom: unset;
+                margin-top: 5vh;
             }
 
             #canvas-container--div #fun-with-logic-gates--nav {
@@ -108,6 +110,7 @@
                 align-content: center;
                 justify-content: center;
                 flex-direction: column;
+                padding-top: 5vh;
             }
 
             #canvas-container--div #fun-with-logic-gates--nav > * {
@@ -203,7 +206,7 @@
     let isPortrait = window.matchMedia("(orientation: portrait)").matches ;
     let is500pxOrLess = window.matchMedia("(max-width: 500px)").matches ;
 
-    let funWithLogicGates = new FunWithLogicGates("canvas", Logger.logLvl.DEBUG, {
+    let funWithLogicGates = new FunWithLogicGates("canvas", Logger.logLvl.INFO, {
         orientation: isPortrait && is500pxOrLess ?
             Coordinates.orientation.PORTRAIT : Coordinates.orientation.LANDSCAPE
     }) ;
@@ -232,6 +235,47 @@
         androidLocalStorage.removeItem(e.saveName) ;
     }) ;
 
+    // Attempt to load AndroidAchievements interface
+    let androidAchievements ;
+    try {
+        if(AndroidAchievements) {
+            androidAchievements = AndroidAchievements ;
+            logger.info('AndroidAchievements added to WebView') ;
+        }
+    } catch(e) {
+        androidAchievements = {
+            onComponentAdded:      (type, name)  => {},
+            onCustomComponentSaved:(numItems, numInputs, numOutputs, truthTable)     => {},
+            onGameSaved:           ()             => {},
+            onMainMenuOpen:        ()             => {},
+            onMainMenuClose:       ()             => {}
+        } ;
+        logger.warn(`AndroidAchievements NOT added to WebView; using NOOPs: ${e}`) ;
+    }
+
+    // Route componentAdded events to the Android achievements bridge
+    document.getElementById("canvas").addEventListener("componentAdded", e => {
+        try { androidAchievements.onComponentAdded(e.detail.type, e.detail.name ?? "") ; } catch(err) {}
+    }) ;
+
+    // Route customComponentSaved events to the Android achievements bridge
+    document.getElementById("canvas").addEventListener("customComponentSaved", e => {
+        try { androidAchievements.onCustomComponentSaved(e.detail.numItems, e.detail.numInputs, e.detail.numOutputs, e.detail.truthTable) ; } catch(err) {}
+    }) ;
+
+    // Route saveGame events to the Android achievements bridge
+    document.getElementById("canvas").addEventListener("saveGame", e => {
+        try { androidAchievements.onGameSaved() ; } catch(err) {}
+    }) ;
+
+    // Route main menu visibility events to the Android achievements bridge
+    document.getElementById("canvas").addEventListener("mainMenuOpen", () => {
+        try { androidAchievements.onMainMenuOpen() ; } catch(err) {}
+    }) ;
+    document.getElementById("canvas").addEventListener("mainMenuClose", () => {
+        try { androidAchievements.onMainMenuClose() ; } catch(err) {}
+    }) ;
+
     // Listen to orientation changes to update funWithLogicGates
     window.addEventListener("orientationchange", (evt) => {
         let isPortrait = !!evt.target.screen.orientation.type.match(new RegExp("portrait")) ;
@@ -241,6 +285,9 @@
                 Coordinates.orientation.PORTRAIT : Coordinates.orientation.LANDSCAPE
         ) ;
     }, true);
+
+    // Focus canvas once on page load to enable touch input
+    setTimeout(() => { document.getElementById("canvas").focus() ; }, 100) ;
 </script>
 </body>
 </html>

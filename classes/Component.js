@@ -300,6 +300,11 @@ class Component extends ComponentInterface {
 
         this.indices.items.index ++ ;
         this.updateCanvasState() ;
+
+        if(this.canvas) {
+            const evt = new CustomEvent("componentAdded", { detail: { type, name: name ?? null } }) ;
+            this.canvas.dispatchEvent(evt) ;
+        }
     }
 
     getNextAvailableIndex(idPrefix, index) {
@@ -607,15 +612,14 @@ class Component extends ComponentInterface {
         let response = { x: newX, y: newY } ;
         let count = 0 ;
 
+        // Always check wall collision first, regardless of whether there are other items
+        count += this.detectCollisionWithWall(thisItem, newX, newY, response);
+        newX = response.x ;
+        newY = response.y ;
+
         // Adjust x, y to keep out of other items' space
         let keys = Object.keys(items) ;
         for(let k = 0; k < keys.length; k++) {
-            if(k === 0) {
-                count += this.detectCollisionWithWall(thisItem, newX, newY, response);
-                newX = response.x ;
-                newY = response.y ;
-            }
-
             let i = keys[k] ;
             let rectA = { x: newX, y: newY, w: thisItem.w, h: thisItem.h } ;
             let rectB = { x: items[i].x, y: items[i].y, w: items[i].w, h: items[i].h } ;

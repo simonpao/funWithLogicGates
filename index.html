@@ -54,6 +54,18 @@
     document.getElementById("canvas").addEventListener("deleteSaveGame", e => {
         logger.debug("deleteSaveGame", e) ;
     }) ;
+    document.getElementById("canvas").addEventListener("componentAdded", e => {
+        logger.debug("componentAdded", e) ;
+    }) ;
+    document.getElementById("canvas").addEventListener("customComponentSaved", e => {
+        logger.debug("customComponentSaved", e) ;
+    }) ;
+    document.getElementById("canvas").addEventListener("mainMenuOpen", e => {
+        logger.debug("mainMenuOpen", e) ;
+    }) ;
+    document.getElementById("canvas").addEventListener("mainMenuClose", e => {
+        logger.debug("mainMenuClose", e) ;
+    }) ;
 </script>
 </body>
 </html>

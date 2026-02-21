@@ -149,9 +149,68 @@ class FunWithLogicGates {
             this.currentComponent.metadata.editing = false ;
             this.components[componentName] = new AbstractedComponentSpec(this.currentComponent, componentName) ;
             this.toolbar.addNewComponent(componentName, this.components[componentName]) ;
+
+            const numInputs = Object.keys(this.currentComponent.inputs).length ;
+            const numOutputs = Object.keys(this.currentComponent.outputs).length ;
+            const numItems = Object.keys(this.currentComponent.items).length ;
+
+            // Only compute truth table for simple gates (max 2 inputs, 1 output) to avoid overhead
+            const truthTable = (numInputs <= 2 && numOutputs === 1) 
+                ? this.computeTruthTableData(this.currentComponent)
+                : [] ;
+
+            const savedEvt = new CustomEvent("customComponentSaved", {
+                detail: {
+                    name: componentName,
+                    numItems: numItems,
+                    numInputs: numInputs,
+                    numOutputs: numOutputs,
+                    truthTable: truthTable
+                }
+            }) ;
+            this.canvas.dispatchEvent(savedEvt) ;
+
             this.currentComponent.clearCanvasState() ;
             this.updateState() ;
         }
+    }
+
+    /**
+     * Computes the truth table data for a component (without rendering HTML).
+     * Returns an array of output values for each input combination.
+     * @param {Component} component - The component to simulate
+     * @returns {Array<number>} - Flattened array of all outputs for each input combination
+     */
+    computeTruthTableData(component) {
+        const inIds = Object.keys(component.inputs) ;
+        const outIds = Object.keys(component.outputs) ;
+        const numIn = inIds.length ;
+        const numOut = outIds.length ;
+        const combinations = Math.pow(2, numIn) ;
+        const truthTable = [] ;
+
+        for(let i = 0; i < combinations; i++) {
+            let binary = (i >>> 0).toString(2).padStart(numIn, '0').split("") ;
+
+            // Set all input states
+            let c = 0 ;
+            for(let n of binary) {
+                component.inputs[inIds[c]].state = parseInt(n) ;
+                c ++ ;
+            }
+            
+            // Propagate states
+            for(let c = 0; c < numIn; c++) {
+                component.propagateState(component.inputs[inIds[c]]) ;
+            }
+
+            // Collect outputs
+            for(let n = 0; n < numOut; n++) {
+                truthTable.push(component.outputs[outIds[n]].state) ;
+            }
+        }
+
+        return truthTable ;
     }
 
     async enterFullScreen(e, reinit = false) {

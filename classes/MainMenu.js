@@ -314,6 +314,7 @@ class MainMenu {
         this.currentSave = currentSave ;
         this.clearCanvas() ;
         this.canvas.classList.add("main-menu") ;
+        this.canvas.dispatchEvent(new CustomEvent("mainMenuOpen")) ;
         this.renderTitle().then(() => {
             let buttons = this.getActiveButtons() ;
             for(let i in buttons) {
@@ -334,6 +335,7 @@ class MainMenu {
     }
 
     removeMainMenu() {
+        this.canvas.dispatchEvent(new CustomEvent("mainMenuClose")) ;
         this.clearCanvas() ;
         this.canvas.classList.remove("main-menu") ;
         this.canvas.style.cursor = "grab" ;
